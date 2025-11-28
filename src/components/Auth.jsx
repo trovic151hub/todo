@@ -6,6 +6,7 @@ import {
   signInWithPopup
 } from "firebase/auth";
 import { auth, provider } from "../firebase";
+import { Eye, EyeOff } from "lucide-react";
 
 function Auth() {
   const [email, setEmail] = useState("");
@@ -13,6 +14,7 @@ function Auth() {
   const [isLoginMode, setIsLoginMode] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -55,23 +57,50 @@ function Auth() {
             onChange={(e) => setEmail(e.target.value)}
             required
           />
-          <input
-            type="password"
-            placeholder="Password..."
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
+
+          <div className="password-wrapper" style={{ position: "relative" }}>
+            <input
+              type={showPassword ? "text" : "password"}
+              placeholder="Password..."
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              style={{ paddingRight: "40px" }}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              style={{
+                position: "absolute",
+                right: "10px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+              }}
+            >
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
+          </div>
 
           <button type="submit" className="btn primary" disabled={loading}>
             {loading ? "Please wait..." : isLoginMode ? "Login" : "Sign Up"}
           </button>
 
+          <div className={`divider ${isLoginMode ? "active" : ""}`}>OR</div>
+
           <button
             type="button"
             className="btn google"
             onClick={handleGoogleLogin}
+            style={{ display: "flex", alignItems: "center", gap: "8px", justifyContent: "center" }}
           >
+            <img
+              src="https://s3-alpha.figma.com/hub/file/6055265191/97a0b7ac-13bb-4f59-986e-8c3e960435fd-cover.png"
+              alt="Google"
+              style={{ width: "30px", height: "18px" }}
+            />
             Continue with Google
           </button>
 
