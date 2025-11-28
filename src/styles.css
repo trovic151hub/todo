@@ -747,3 +747,195 @@ body {
     justify-content: center;
   }
 }
+
+/* Password input wrapper */
+.password-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+/* Password input field */
+.password-wrapper input {
+  width: 100%;
+  padding: 10px 40px 10px 10px; /* leave space for eye icon */
+  border-radius: 8px;
+  border: 1px solid #e6e9ef;
+  box-sizing: border-box;
+}
+
+/* Eye button inside input */
+.eye-btn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  color: #6b7280;
+  transition: color 0.2s;
+}
+
+/* .eye-btn:hover {
+  color: #2563eb; /* highlight color on hover */
+/* } */ 
+
+/* Eye button inside input - mobile adjustments */
+@media (max-width: 720px) {
+  .eye-btn {
+    right: 8px;
+    padding: 8px; /* increases tap area */
+  }
+
+  .password-wrapper input {
+    padding-right: 44px; /* keep space for the larger tap area */
+  }
+}
+
+/* Divider */
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 12px 0;
+  color: var(--muted);
+  font-size: 14px;
+  gap: 8px;
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* Google Button */
+.btn.google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  color: #111;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn.google img {
+  width: 20px;
+  height: 20px;
+}
+
+.btn.google:hover {
+  background-color: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+/* Divider */
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 12px 0;
+  color: var(--muted);
+  font-size: 14px;
+  gap: 8px;
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  border-top: 1px solid #e5e7eb;
+}
+
+/* Google Button */
+.btn.google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  color: #111;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn.google img {
+  width: 20px;
+  height: 20px;
+}
+
+.btn.google:hover {
+  background-color: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+/* ================== Responsive ================== */
+@media (max-width: 480px) {
+  /* Divider */
+  .divider {
+    font-size: 12px;
+    gap: 6px;
+  }
+
+  /* Google button full width */
+  .btn.google {
+    width: 100%;
+    justify-content: center;
+    padding: 10px;
+    font-size: 14px;
+  }
+
+  .btn.google img {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+/* Animated Divider */
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 12px 0;
+  color: var(--muted);
+  font-size: 14px;
+  gap: 8px;
+  position: relative;
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  border-top: 1px solid #e5e7eb;
+  transition: flex 0.3s ease, border-color 0.3s ease;
+}
+
+/* Active animation */
+.divider.active::before,
+.divider.active::after {
+  border-color: var(--accent);
+  flex: 1.2; /* Slightly expand line */
+}
+
+/* ================== Responsive ================== */
+@media (max-width: 480px) {
+  .divider {
+    font-size: 12px;
+    gap: 6px;
+  }
+}
+
