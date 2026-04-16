@@ -1074,30 +1074,105 @@ html.dark .auth-container {
 }
 
 /* ============================================================
-   Responsive — Tablet
+   Responsive — Tablet  (≤ 720 px)
    ============================================================ */
 @media (max-width: 720px) {
-  .app { margin: 12px auto; gap: 10px; }
+  .app { margin: 12px auto; gap: 10px; padding: 0 12px 48px; }
   .header-right.desktop-only { display: none; }
   .hamburger-btn { display: flex; }
-  .controls-row { flex-wrap: wrap; }
-  .sort-wrap { width: 100%; }
+
+  /* Stack search above sort */
+  .controls-row { flex-direction: column; gap: 6px; }
+  .search-wrap  { width: 100%; }
+  .sort-wrap    { width: 100%; }
   .sort-wrap select { width: 100%; }
-  .filter-row { flex-direction: column; align-items: flex-start; }
+
+  .filter-row { flex-direction: column; align-items: flex-start; gap: 8px; }
+
+  /* Horizontal-scroll category pills — no line breaks */
+  .cat-filter-row {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 14px;
+    gap: 8px;
+  }
+  .cat-filter-row::-webkit-scrollbar { display: none; }
+  .btn.cat-pill { flex-shrink: 0; }
+
   .footer { flex-direction: column; align-items: flex-start; gap: 6px; }
 }
 
 /* ============================================================
-   Responsive — Mobile
+   Responsive — Mobile  (≤ 480 px)
    ============================================================ */
 @media (max-width: 480px) {
-  .app { margin: 8px auto; }
-  .main-card { padding: 14px; }
-  .todo-input { flex-wrap: wrap; }
+  /* Edge-to-edge layout */
+  .app { margin: 0; padding: 0 0 64px; gap: 6px; }
+  .header    { border-radius: 0; border-left: none; border-right: none; padding: 12px 16px; }
+  .main-card { border-radius: 0; border-left: none; border-right: none; padding: 14px 14px 18px; }
+  .footer    { border-radius: 0; border-left: none; border-right: none; }
+
+  /* Touch-friendly tap targets */
+  .btn        { min-height: 44px; }
+  .btn.small  { min-height: 38px; padding: 6px 12px; }
+  .btn.icon   { min-height: 42px; min-width: 42px; padding: 10px; }
+  .btn.filter { min-height: 38px; }
+  .btn.cat-pill { min-height: 32px; }
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="date"],
+  select { min-height: 44px; font-size: 16px; /* prevents iOS zoom */ }
+
+  /* Todo input — full-width text, then controls row */
+  .todo-input { flex-wrap: wrap; gap: 8px; }
   .todo-input input[type="text"] { width: 100%; }
-  .todo-row .right { padding-top: 8px; width: 100%; justify-content: flex-end; }
-  .todo-row { flex-wrap: wrap; }
-  .auth-card { padding: 26px 18px; }
-  .toast-stack { left: 16px; right: 16px; bottom: 16px; }
-  .toast { min-width: unset; width: 100%; }
+  .input-addon { flex: 1; min-width: 0; }
+  .btn.primary[type="submit"] { flex: 0 0 auto; min-width: 80px; }
+
+  /* Date picker row stacks */
+  .date-row { flex-wrap: wrap; gap: 8px; }
+  .date-input { flex: 1; min-width: 120px; }
+
+  /* Todo rows — column layout so buttons get their own line */
+  .todo-row {
+    flex-direction: column;
+    gap: 0;
+    padding: 12px 12px 0;
+  }
+  .todo-row .left  { width: 100%; padding-bottom: 10px; }
+  .todo-row .right {
+    width: 100%;
+    justify-content: flex-end;
+    padding: 8px 0 10px;
+    border-top: 1px solid var(--border);
+    gap: 8px;
+  }
+
+  /* Allow task text to wrap — no truncation on mobile */
+  .todo-text {
+    white-space: normal;
+    word-break: break-word;
+    overflow: visible;
+    text-overflow: unset;
+  }
+
+  /* Edit mode — category select gets full space */
+  .cat-select { flex: 1; min-width: 0; }
+
+  /* Filters take full width */
+  .filters { width: 100%; }
+  .btn.filter { flex: 1; text-align: center; font-size: 12px; padding: 6px 4px; }
+
+  /* Auth card */
+  .auth-card { padding: 24px 16px; margin: 0 8px; border-radius: var(--radius-lg); }
+
+  /* Toast — full-width at bottom */
+  .toast-stack { left: 10px; right: 10px; bottom: 10px; }
+  .toast { min-width: unset; width: 100%; font-size: 13px; }
+
+  /* Header brand subtitle — hide on very small screens */
+  .header-left p { display: none; }
 }
