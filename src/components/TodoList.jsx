@@ -3,7 +3,7 @@ import TodoItem from "./TodoItem";
 
 export default function TodoList({ todos, toggleTodo, deleteTodo, editTodo }) {
   return (
-    <div className="todo-list card">
+    <div className="todo-list">
       {todos.length === 0 ? (
         <p className="muted">No tasks yet — add your first task above.</p>
       ) : (

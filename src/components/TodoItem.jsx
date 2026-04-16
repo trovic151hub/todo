@@ -46,7 +46,9 @@ export default function TodoItem({ todo, toggleTodo, deleteTodo, editTodo }) {
           </span>
         )}
 
-        <span className="badge">{todo.category || "General"}</span>
+        <span className={`badge badge-${(todo.category || "General").toLowerCase()}`}>
+          {todo.category || "General"}
+        </span>
       </div>
 
       <div className="right">

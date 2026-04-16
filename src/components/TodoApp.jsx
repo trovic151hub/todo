@@ -143,7 +143,7 @@ export default function TodoApp({ user }) {
     <div className="app">
       <Header user={user} onSignOut={() => signOut(auth)} dark={dark} setDark={setDark} />
 
-      <main className="card">
+      <main className="card main-card">
         <div className="top-row">
           <TodoInput addTodo={addTodo} categories={PRESET_CATEGORIES} />
           <div className="controls">
