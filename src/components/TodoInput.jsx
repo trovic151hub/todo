@@ -24,7 +24,6 @@ export default function TodoInput({ addTodo, categories = ["General"] }) {
         placeholder="Add a new task..."
         value={input}
         onChange={(e) => setInput(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && handleAdd()}
       />
 
       <select

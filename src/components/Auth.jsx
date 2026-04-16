@@ -97,9 +97,9 @@ function Auth() {
             style={{ display: "flex", alignItems: "center", gap: "8px", justifyContent: "center" }}
           >
             <img
-              src="https://s3-alpha.figma.com/hub/file/6055265191/97a0b7ac-13bb-4f59-986e-8c3e960435fd-cover.png"
+              src="https://www.google.com/favicon.ico"
               alt="Google"
-              style={{ width: "30px", height: "18px" }}
+              style={{ width: "18px", height: "18px" }}
             />
             Continue with Google
           </button>

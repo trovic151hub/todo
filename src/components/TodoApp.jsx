@@ -21,10 +21,10 @@ import TodoList from "./TodoList";
 import Footer from "./Footer";
 
 const PRESET_CATEGORIES = ["General", "Work", "Personal", "Shopping", "School"];
+const todosCol = collection(db, "todos");
 
 export default function TodoApp({ user }) {
   const uid = user.uid;
-  const todosCol = collection(db, "todos");
 
   const [todos, setTodos] = useState([]);
   const [filter, setFilter] = useState("all"); // all | active | completed
