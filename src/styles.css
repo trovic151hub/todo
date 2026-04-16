@@ -549,6 +549,15 @@ input, select, button, textarea { font-family: var(--font); font-size: 14px; }
 }
 .btn.google:hover { background: var(--bg); }
 
+/* Notification bell */
+.notif-btn { position: relative; }
+.notif-btn.notif-on {
+  color: var(--accent) !important;
+  background: var(--accent-light) !important;
+  border-color: var(--accent-border) !important;
+}
+.notif-btn:not(.notif-on) { color: var(--muted); }
+
 /* ============================================================
    Custom Checkbox
    ============================================================ */

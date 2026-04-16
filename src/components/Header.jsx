@@ -1,12 +1,20 @@
 import { useState, useEffect } from "react";
-import { Menu, X, Sun, Moon, LogOut, CheckSquare } from "lucide-react";
+import { Menu, X, Sun, Moon, LogOut, CheckSquare, Bell, BellOff } from "lucide-react";
 
-export default function Header({ user, onSignOut, dark, setDark }) {
+export default function Header({ user, onSignOut, dark, setDark, notifPerm, onRequestNotif }) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     document.body.style.overflow = menuOpen ? "hidden" : "";
   }, [menuOpen]);
+
+  const bellTitle =
+    notifPerm === "granted"     ? "Notifications enabled" :
+    notifPerm === "denied"      ? "Notifications blocked — enable in browser settings" :
+    notifPerm === "unsupported" ? "Notifications not supported in this browser" :
+                                  "Enable task notifications";
+
+  const BellIcon = notifPerm === "granted" ? Bell : BellOff;
 
   return (
     <header className="header card">
@@ -33,11 +41,7 @@ export default function Header({ user, onSignOut, dark, setDark }) {
       )}
 
       <div className={`mobile-menu ${menuOpen ? "open" : ""}`}>
-        <button
-          className="close-btn"
-          onClick={() => setMenuOpen(false)}
-          aria-label="Close menu"
-        >
+        <button className="close-btn" onClick={() => setMenuOpen(false)} aria-label="Close menu">
           <X size={22} />
         </button>
         <div className="user-info">
@@ -50,6 +54,14 @@ export default function Header({ user, onSignOut, dark, setDark }) {
         </div>
         <button className="btn icon" onClick={() => setDark(d => !d)} aria-label="Toggle theme">
           {dark ? <><Sun size={16} /> Light mode</> : <><Moon size={16} /> Dark mode</>}
+        </button>
+        <button
+          className={`btn icon${notifPerm === "granted" ? " notif-on" : ""}`}
+          onClick={onRequestNotif}
+          title={bellTitle}
+        >
+          <BellIcon size={16} />
+          {notifPerm === "granted" ? " Alerts on" : " Enable alerts"}
         </button>
         <button className="btn secondary" onClick={onSignOut}>
           <LogOut size={15} /> Sign out
@@ -65,6 +77,17 @@ export default function Header({ user, onSignOut, dark, setDark }) {
           />
           <span className="user-email">{user.email}</span>
         </div>
+
+        {/* Notification bell */}
+        <button
+          className={`btn icon notif-btn${notifPerm === "granted" ? " notif-on" : ""}`}
+          onClick={onRequestNotif}
+          title={bellTitle}
+          aria-label={bellTitle}
+        >
+          <BellIcon size={18} />
+        </button>
+
         <button
           className="btn icon"
           aria-label="Toggle theme"
@@ -73,6 +96,7 @@ export default function Header({ user, onSignOut, dark, setDark }) {
         >
           {dark ? <Sun size={18} /> : <Moon size={18} />}
         </button>
+
         <button className="btn secondary" onClick={onSignOut}>
           <LogOut size={15} /> Sign out
         </button>

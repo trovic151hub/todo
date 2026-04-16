@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   collection, addDoc, deleteDoc, doc, updateDoc,
   serverTimestamp, query, where, orderBy, onSnapshot,
@@ -8,28 +8,43 @@ import { Search, SortDesc, Trash2 } from "lucide-react";
 import { auth, db } from "../firebase";
 import { useToast } from "../context/ToastContext";
 
-import Header   from "./Header";
+import Header    from "./Header";
 import TodoInput from "./TodoInput";
 import TodoList  from "./TodoList";
-import Footer   from "./Footer";
+import Footer    from "./Footer";
 
 const PRESET_CATEGORIES = ["General", "Work", "Personal", "Shopping", "School"];
 const todosCol = collection(db, "todos");
+
+// How many days ago a due date was, as readable text
+function dueDeltaText(dateStr) {
+  const due = new Date(dateStr + "T00:00:00");
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const days = Math.round((today - due) / 86400000);
+  if (days === 0) return "today";
+  if (days === 1) return "yesterday";
+  if (days <= 7)  return `${days} days ago`;
+  return `on ${due.toLocaleDateString(undefined, { month: "short", day: "numeric" })}`;
+}
 
 export default function TodoApp({ user }) {
   const uid = user.uid;
   const { addToast } = useToast();
 
   const [todos,     setTodos]     = useState([]);
-  const [filter,    setFilter]    = useState("all");    // all | active | completed
-  const [catFilter, setCatFilter] = useState("All");    // All | category name
+  const [filter,    setFilter]    = useState("all");
+  const [catFilter, setCatFilter] = useState("All");
   const [search,    setSearch]    = useState("");
-  const [sort,      setSort]      = useState("newest"); // newest | oldest | az | completed
+  const [sort,      setSort]      = useState("newest");
   const [dark,      setDark]      = useState(() => {
     const saved = localStorage.getItem("todo-dark");
     return saved ? JSON.parse(saved) : false;
   });
   const [loading, setLoading] = useState(true);
+  const [notifPerm, setNotifPerm] = useState(
+    "Notification" in window ? Notification.permission : "unsupported"
+  );
 
   // Theme
   useEffect(() => {
@@ -58,13 +73,95 @@ export default function TodoApp({ user }) {
     return () => unsub();
   }, [uid]);
 
+  // ── Notification permission request ──────────────────────────
+  const requestNotifPermission = useCallback(async () => {
+    if (!("Notification" in window)) {
+      addToast("Your browser doesn't support notifications.", "error");
+      return;
+    }
+    if (Notification.permission === "granted") {
+      addToast("Notifications are already enabled.", "info");
+      return;
+    }
+    if (Notification.permission === "denied") {
+      addToast("Notifications are blocked. Please enable them in your browser settings.", "error");
+      return;
+    }
+    const perm = await Notification.requestPermission();
+    setNotifPerm(perm);
+    if (perm === "granted") {
+      addToast("Notifications enabled! You'll be alerted when tasks are due.", "success");
+    } else {
+      addToast("Notification permission denied.", "error");
+    }
+  }, [addToast]);
+
+  // Ask for permission automatically on first login (once per session)
+  useEffect(() => {
+    if (!("Notification" in window)) return;
+    if (Notification.permission === "default") {
+      // Small delay so the UI settles before the browser dialog appears
+      const t = setTimeout(() => {
+        Notification.requestPermission().then(perm => setNotifPerm(perm));
+      }, 1500);
+      return () => clearTimeout(t);
+    }
+  }, []);
+
+  // ── Due-task checker (runs every 60 s while app is open) ─────
+  useEffect(() => {
+    if (!("Notification" in window) || !todos.length) return;
+
+    const check = () => {
+      if (Notification.permission !== "granted") return;
+
+      const todayStr = new Date().toISOString().split("T")[0];
+      const key = `notified-${uid}-${todayStr}`;
+      const alreadyNotified = new Set(JSON.parse(localStorage.getItem(key) || "[]"));
+      const newlyNotified = [];
+
+      const todayMidnight = new Date();
+      todayMidnight.setHours(0, 0, 0, 0);
+
+      todos.forEach(todo => {
+        if (!todo.dueDate || todo.completed || alreadyNotified.has(todo.id)) return;
+
+        const due = new Date(todo.dueDate + "T00:00:00");
+        if (due > todayMidnight) return; // not due yet
+
+        const overdue = due < todayMidnight;
+        const title   = overdue ? "⚠️ Overdue Task" : "📋 Task Due Today";
+        const body    = overdue
+          ? `"${todo.text}" was due ${dueDeltaText(todo.dueDate)} — still pending!`
+          : `"${todo.text}" is due today!`;
+
+        const notif = new Notification(title, {
+          body,
+          icon:  "/favicon.svg",
+          badge: "/favicon.svg",
+          tag:   todo.id, // browser deduplicates by tag
+        });
+
+        notif.onclick = () => { window.focus(); notif.close(); };
+        newlyNotified.push(todo.id);
+      });
+
+      if (newlyNotified.length > 0) {
+        localStorage.setItem(key, JSON.stringify([...alreadyNotified, ...newlyNotified]));
+      }
+    };
+
+    check(); // run immediately when todos load
+    const interval = setInterval(check, 60_000);
+    return () => clearInterval(interval);
+  }, [todos, uid]);
+
   // Stats
   const totalCount     = todos.length;
   const completedCount = todos.filter(t => t.completed).length;
   const activeCount    = totalCount - completedCount;
   const pct            = totalCount === 0 ? 0 : Math.round((completedCount / totalCount) * 100);
 
-  // Used categories (for filter pills)
   const usedCategories = useMemo(() => {
     const cats = new Set(todos.map(t => t.category || "General"));
     return ["All", ...PRESET_CATEGORIES.filter(c => cats.has(c))];
@@ -105,7 +202,7 @@ export default function TodoApp({ user }) {
 
   const clearCompleted = async () => {
     const done = todos.filter(t => t.completed);
-    if (done.length === 0) return;
+    if (!done.length) return;
     await Promise.all(done.map(t => deleteDoc(doc(db, "todos", t.id))));
     addToast(`Cleared ${done.length} completed task${done.length !== 1 ? "s" : ""}.`, "info");
   };
@@ -114,7 +211,7 @@ export default function TodoApp({ user }) {
   const processedTodos = useMemo(() => {
     let list = [...todos];
     if (filter === "active")    list = list.filter(t => !t.completed);
-    if (filter === "completed") list = list.filter(t => t.completed);
+    if (filter === "completed") list = list.filter(t =>  t.completed);
     if (catFilter !== "All")    list = list.filter(t => (t.category || "General") === catFilter);
     if (search.trim()) {
       const s = search.toLowerCase();
@@ -134,7 +231,14 @@ export default function TodoApp({ user }) {
 
   return (
     <div className="app">
-      <Header user={user} onSignOut={() => signOut(auth)} dark={dark} setDark={setDark} />
+      <Header
+        user={user}
+        onSignOut={() => signOut(auth)}
+        dark={dark}
+        setDark={setDark}
+        notifPerm={notifPerm}
+        onRequestNotif={requestNotifPermission}
+      />
 
       <main className="card main-card">
         <TodoInput addTodo={addTodo} categories={PRESET_CATEGORIES} />
@@ -190,9 +294,9 @@ export default function TodoApp({ user }) {
                 className={`btn filter${filter === f ? " active" : ""}`}
                 onClick={() => setFilter(f)}
               >
-                {f === "all" ? `All ${totalCount > 0 ? `(${totalCount})` : ""}` :
-                 f === "active" ? `Active (${activeCount})` :
-                 `Done (${completedCount})`}
+                {f === "all"       ? `All ${totalCount > 0 ? `(${totalCount})` : ""}` :
+                 f === "active"    ? `Active (${activeCount})` :
+                                     `Done (${completedCount})`}
               </button>
             ))}
           </div>
