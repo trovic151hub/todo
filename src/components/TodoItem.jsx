@@ -1,5 +1,8 @@
 import { useState } from "react";
-import { Pencil, Trash2, Check, X, Clock, AlertCircle, Flag } from "lucide-react";
+import {
+  Pencil, Trash2, Check, X, Clock, AlertCircle,
+  Flag, FileText, ChevronDown, ChevronUp,
+} from "lucide-react";
 
 const CATS       = ["General", "Work", "Personal", "Shopping", "School"];
 const PRIORITIES = ["None", "Low", "Medium", "High"];
@@ -23,13 +26,21 @@ export default function TodoItem({ todo, toggleTodo, deleteTodo, editTodo }) {
   const [category, setCategory] = useState(todo.category || "General");
   const [dueDate,  setDueDate]  = useState(todo.dueDate  || "");
   const [priority, setPriority] = useState(todo.priority || "None");
+  const [note,     setNote]     = useState(todo.note     || "");
+  const [noteOpen, setNoteOpen] = useState(false);
 
-  const overdue = !todo.completed && isOverdue(todo.dueDate);
-  const prio    = todo.priority || null;
+  const overdue  = !todo.completed && isOverdue(todo.dueDate);
+  const prio     = todo.priority || null;
+  const hasNote  = !!todo.note?.trim();
 
   const save = () => {
     if (!value.trim()) return;
-    editTodo(todo.id, value, category, dueDate || null, priority === "None" ? null : priority);
+    editTodo(
+      todo.id, value, category,
+      dueDate || null,
+      priority === "None" ? null : priority,
+      note.trim() || null,
+    );
     setIsEditing(false);
   };
 
@@ -39,6 +50,7 @@ export default function TodoItem({ todo, toggleTodo, deleteTodo, editTodo }) {
     setCategory(todo.category || "General");
     setDueDate(todo.dueDate   || "");
     setPriority(todo.priority || "None");
+    setNote(todo.note         || "");
   };
 
   return (
@@ -48,6 +60,7 @@ export default function TodoItem({ todo, toggleTodo, deleteTodo, editTodo }) {
         todo.completed ? "completed" : "",
         overdue        ? "overdue"   : "",
         prio           ? `prio-${prio.toLowerCase()}` : "",
+        hasNote        ? "has-note"  : "",
       ].filter(Boolean).join(" ")}
     >
       <div className="left">
@@ -63,6 +76,7 @@ export default function TodoItem({ todo, toggleTodo, deleteTodo, editTodo }) {
         </label>
 
         <div className="todo-content">
+          {/* Task title */}
           {isEditing ? (
             <input
               className="edit-input"
@@ -84,8 +98,8 @@ export default function TodoItem({ todo, toggleTodo, deleteTodo, editTodo }) {
             </span>
           )}
 
+          {/* Meta row */}
           <div className="todo-meta">
-            {/* Priority badge */}
             {prio && (
               <span className={`priority-badge priority-${prio.toLowerCase()}`}>
                 <Flag size={9} strokeWidth={2.5} />
@@ -93,12 +107,10 @@ export default function TodoItem({ todo, toggleTodo, deleteTodo, editTodo }) {
               </span>
             )}
 
-            {/* Category badge */}
             <span className={`badge badge-${(todo.category || "General").toLowerCase()}`}>
               {todo.category || "General"}
             </span>
 
-            {/* Due date */}
             {todo.dueDate && (
               <span className={`due-badge${overdue ? " overdue" : ""}`}>
                 {overdue ? <AlertCircle size={11} /> : <Clock size={11} />}
@@ -106,7 +118,6 @@ export default function TodoItem({ todo, toggleTodo, deleteTodo, editTodo }) {
               </span>
             )}
 
-            {/* Date picker in edit mode */}
             {isEditing && (
               <input
                 type="date"
@@ -115,7 +126,39 @@ export default function TodoItem({ todo, toggleTodo, deleteTodo, editTodo }) {
                 onChange={(e) => setDueDate(e.target.value)}
               />
             )}
+
+            {/* Note toggle — only shown in view mode when note exists */}
+            {!isEditing && hasNote && (
+              <button
+                className={`note-toggle-btn${noteOpen ? " active" : ""}`}
+                onClick={() => setNoteOpen(o => !o)}
+                title={noteOpen ? "Hide note" : "Show note"}
+                aria-label={noteOpen ? "Hide note" : "Show note"}
+              >
+                <FileText size={11} />
+                Note
+                {noteOpen ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
+              </button>
+            )}
           </div>
+
+          {/* Note panel — view mode */}
+          {!isEditing && noteOpen && hasNote && (
+            <div className="note-panel">
+              <p className="note-text">{todo.note}</p>
+            </div>
+          )}
+
+          {/* Note textarea — edit mode */}
+          {isEditing && (
+            <textarea
+              className="note-textarea"
+              placeholder="Add a note or description… (optional)"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              rows={3}
+            />
+          )}
         </div>
       </div>
 

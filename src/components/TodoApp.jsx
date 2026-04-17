@@ -215,12 +215,13 @@ export default function TodoApp({ user }) {
     if (nowDone) addToast("Task completed! 🎉", "success");
   };
 
-  const editTodo = async (id, newText, newCategory, newDueDate, newPriority = null) => {
+  const editTodo = async (id, newText, newCategory, newDueDate, newPriority = null, newNote = null) => {
     const trimmed = newText.trim();
     if (!trimmed) return;
     await updateDoc(doc(db, "todos", id), {
       text: trimmed, category: newCategory,
       dueDate: newDueDate || null, priority: newPriority || null,
+      note: newNote || null,
     });
     addToast("Task updated.", "info");
   };
