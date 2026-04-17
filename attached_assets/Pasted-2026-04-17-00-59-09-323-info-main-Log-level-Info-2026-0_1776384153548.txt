@@ -1,0 +1,105 @@
+2026-04-17 00:59:09.323 [info] [main] Log level: Info
+2026-04-17 00:59:09.323 [info] [main] Validating found git in: "C:\Program Files\Git\cmd\git.exe"
+2026-04-17 00:59:09.323 [info] [main] Using git "2.50.0.windows.1" from "C:\Program Files\Git\cmd\git.exe"
+2026-04-17 00:59:09.323 [info] [Model][doInitialScan] Initial repository scan started
+2026-04-17 00:59:09.323 [info] [Model][doInitialScan] Initial repository scan completed - repositories (0), closed repositories (0), parent repositories (0), unsafe repositories (0)
+2026-04-17 00:59:36.027 [info] [main] Log level: Info
+2026-04-17 00:59:36.027 [info] [main] Validating found git in: "C:\Program Files\Git\cmd\git.exe"
+2026-04-17 00:59:36.027 [info] [main] Using git "2.50.0.windows.1" from "C:\Program Files\Git\cmd\git.exe"
+2026-04-17 00:59:36.033 [info] [Model][doInitialScan] Initial repository scan started
+2026-04-17 00:59:36.094 [info] > git rev-parse --show-toplevel [72ms]
+2026-04-17 00:59:37.531 [info] > git rev-parse --git-dir --git-common-dir --show-superproject-working-tree [1431ms]
+2026-04-17 00:59:38.152 [info] [Model][openRepository] Opened repository (path): c:\Users\USER\Documents\React
+2026-04-17 00:59:38.152 [info] [Model][openRepository] Opened repository (real path): c:\Users\USER\Documents\React
+2026-04-17 00:59:38.152 [info] [Model][openRepository] Opened repository (kind): repository
+2026-04-17 00:59:38.279 [info] > git config --get commit.template [112ms]
+2026-04-17 00:59:38.320 [info] > git rev-parse --show-toplevel [150ms]
+2026-04-17 00:59:38.341 [info] > git for-each-ref --format=%(refname)%00%(upstream:short)%00%(objectname)%00%(upstream:track)%00%(upstream:remotename)%00%(upstream:remoteref) --ignore-case refs/heads/master refs/remotes/master [87ms]
+2026-04-17 00:59:38.407 [info] > git rev-parse --show-toplevel [81ms]
+2026-04-17 00:59:38.411 [info] [Model][doInitialScan] Initial repository scan completed - repositories (1), closed repositories (0), parent repositories (0), unsafe repositories (0)
+2026-04-17 00:59:38.456 [info] > git for-each-ref --sort -committerdate --format %(refname)%00%(objectname)%00%(*objectname) [98ms]
+2026-04-17 00:59:38.496 [info] > git status -z -uall [146ms]
+2026-04-17 00:59:38.519 [info] > git rev-parse --show-toplevel [100ms]
+2026-04-17 00:59:38.654 [info] > git for-each-ref --format=%(refname)%00%(upstream:short)%00%(objectname)%00%(upstream:track)%00%(upstream:remotename)%00%(upstream:remoteref) --ignore-case refs/heads/master refs/remotes/master [108ms]
+2026-04-17 00:59:38.654 [info] > git rev-parse --show-toplevel [125ms]
+2026-04-17 00:59:38.655 [info] > git for-each-ref --format=%(refname)%00%(upstream:short)%00%(objectname)%00%(upstream:track)%00%(upstream:remotename)%00%(upstream:remoteref) --ignore-case refs/heads/master refs/remotes/master [147ms]
+2026-04-17 00:59:38.661 [info] > git config --get commit.template [137ms]
+2026-04-17 00:59:38.775 [info] > git rev-parse --show-toplevel [100ms]
+2026-04-17 00:59:38.775 [info] > git config --get --local branch.master.vscode-merge-base [114ms]
+2026-04-17 00:59:38.791 [info] > git for-each-ref --sort -committerdate --format %(refname)%00%(objectname)%00%(*objectname) [83ms]
+2026-04-17 00:59:38.855 [info] > git status -z -uall [152ms]
+2026-04-17 00:59:38.860 [info] > git for-each-ref --format=%(refname)%00%(upstream:short)%00%(objectname)%00%(upstream:track)%00%(upstream:remotename)%00%(upstream:remoteref) --ignore-case refs/heads/origin/master refs/remotes/origin/master [79ms]
+2026-04-17 00:59:38.940 [info] > git merge-base refs/heads/master refs/remotes/origin/master [73ms]
+2026-04-17 00:59:38.946 [info] > git merge-base refs/heads/master refs/remotes/origin/master [75ms]
+2026-04-17 00:59:39.057 [info] > git log --format=%H%n%aN%n%aE%n%at%n%ct%n%P%n%D%n%B -z --shortstat --diff-merges=first-parent -n50 --skip=0 --topo-order --decorate=full --stdin [175ms]
+2026-04-17 00:59:39.474 [info] > git fetch [1322ms]
+2026-04-17 00:59:39.561 [info] > git for-each-ref --format=%(refname)%00%(upstream:short)%00%(objectname)%00%(upstream:track)%00%(upstream:remotename)%00%(upstream:remoteref) --ignore-case refs/heads/master refs/remotes/master [74ms]
+2026-04-17 00:59:39.562 [info] > git config --get commit.template [77ms]
+2026-04-17 00:59:39.625 [info] > git for-each-ref --sort -committerdate --format %(refname)%00%(objectname)%00%(*objectname) [57ms]
+2026-04-17 00:59:39.658 [info] > git status -z -uall [93ms]
+2026-04-17 00:59:40.282 [info] > git merge-base master origin/master [94ms]
+2026-04-17 00:59:44.172 [info] > git log --oneline --cherry master...master@{upstream} -- [71ms]
+2026-04-17 00:59:45.581 [info] > git pull --tags origin master [1403ms]
+2026-04-17 00:59:45.581 [info] From https://github.com/trovic151hub/todo
+ * branch            master     -> FETCH_HEAD
+fatal: refusing to merge unrelated histories
+2026-04-17 00:59:45.704 [info] > git config --get commit.template [115ms]
+2026-04-17 00:59:45.713 [info] > git for-each-ref --format=%(refname)%00%(upstream:short)%00%(objectname)%00%(upstream:track)%00%(upstream:remotename)%00%(upstream:remoteref) --ignore-case refs/heads/master refs/remotes/master [118ms]
+2026-04-17 00:59:45.773 [info] > git for-each-ref --sort -committerdate --format %(refname)%00%(objectname)%00%(*objectname) [53ms]
+2026-04-17 00:59:45.801 [info] > git status -z -uall [85ms]
+2026-04-17 01:00:05.361 [info] > git log --oneline --cherry master...master@{upstream} -- [69ms]
+2026-04-17 01:00:06.573 [info] > git pull --tags origin master [1208ms]
+2026-04-17 01:00:06.573 [info] From https://github.com/trovic151hub/todo
+ * branch            master     -> FETCH_HEAD
+fatal: refusing to merge unrelated histories
+2026-04-17 01:00:06.627 [info] > git config --get commit.template [51ms]
+2026-04-17 01:00:06.635 [info] > git for-each-ref --format=%(refname)%00%(upstream:short)%00%(objectname)%00%(upstream:track)%00%(upstream:remotename)%00%(upstream:remoteref) --ignore-case refs/heads/master refs/remotes/master [55ms]
+2026-04-17 01:00:06.688 [info] > git for-each-ref --sort -committerdate --format %(refname)%00%(objectname)%00%(*objectname) [47ms]
+2026-04-17 01:00:06.718 [info] > git status -z -uall [80ms]
+2026-04-17 01:00:08.619 [info] > git config --get commit.template [55ms]
+2026-04-17 01:00:08.629 [info] > git for-each-ref --format=%(refname)%00%(upstream:short)%00%(objectname)%00%(upstream:track)%00%(upstream:remotename)%00%(upstream:remoteref) --ignore-case refs/heads/master refs/remotes/master [58ms]
+2026-04-17 01:00:08.686 [info] > git for-each-ref --sort -committerdate --format %(refname)%00%(objectname)%00%(*objectname) [51ms]
+2026-04-17 01:00:08.723 [info] > git status -z -uall [92ms]
+2026-04-17 01:00:53.443 [info] > git log --oneline --cherry master...master@{upstream} -- [71ms]
+2026-04-17 01:00:55.178 [info] > git pull --tags origin master [1733ms]
+2026-04-17 01:00:55.178 [info] From https://github.com/trovic151hub/todo
+ * branch            master     -> FETCH_HEAD
+fatal: refusing to merge unrelated histories
+2026-04-17 01:00:55.229 [info] > git config --get commit.template [47ms]
+2026-04-17 01:00:55.237 [info] > git for-each-ref --format=%(refname)%00%(upstream:short)%00%(objectname)%00%(upstream:track)%00%(upstream:remotename)%00%(upstream:remoteref) --ignore-case refs/heads/master refs/remotes/master [52ms]
+2026-04-17 01:00:55.291 [info] > git for-each-ref --sort -committerdate --format %(refname)%00%(objectname)%00%(*objectname) [48ms]
+2026-04-17 01:00:55.318 [info] > git status -z -uall [78ms]
+2026-04-17 01:00:56.860 [info] > git config --get commit.template [56ms]
+2026-04-17 01:00:56.870 [info] > git for-each-ref --format=%(refname)%00%(upstream:short)%00%(objectname)%00%(upstream:track)%00%(upstream:remotename)%00%(upstream:remoteref) --ignore-case refs/heads/master refs/remotes/master [61ms]
+2026-04-17 01:00:56.930 [info] > git for-each-ref --sort -committerdate --format %(refname)%00%(objectname)%00%(*objectname) [53ms]
+2026-04-17 01:00:56.960 [info] > git status -z -uall [86ms]
+2026-04-17 01:01:09.259 [info] > git log --oneline --cherry master...master@{upstream} -- [70ms]
+2026-04-17 01:01:10.738 [info] > git pull --tags origin master [1476ms]
+2026-04-17 01:01:10.739 [info] From https://github.com/trovic151hub/todo
+ * branch            master     -> FETCH_HEAD
+fatal: refusing to merge unrelated histories
+2026-04-17 01:01:10.823 [info] > git config --get commit.template [71ms]
+2026-04-17 01:01:10.832 [info] > git for-each-ref --format=%(refname)%00%(upstream:short)%00%(objectname)%00%(upstream:track)%00%(upstream:remotename)%00%(upstream:remoteref) --ignore-case refs/heads/master refs/remotes/master [67ms]
+2026-04-17 01:01:10.889 [info] > git for-each-ref --sort -committerdate --format %(refname)%00%(objectname)%00%(*objectname) [51ms]
+2026-04-17 01:01:10.919 [info] > git status -z -uall [84ms]
+2026-04-17 01:01:25.890 [info] > git log --oneline --cherry master...master@{upstream} -- [89ms]
+2026-04-17 01:01:27.397 [info] > git pull --tags origin master [1505ms]
+2026-04-17 01:01:27.397 [info] From https://github.com/trovic151hub/todo
+ * branch            master     -> FETCH_HEAD
+fatal: refusing to merge unrelated histories
+2026-04-17 01:01:27.476 [info] > git config --get commit.template [74ms]
+2026-04-17 01:01:27.495 [info] > git for-each-ref --format=%(refname)%00%(upstream:short)%00%(objectname)%00%(upstream:track)%00%(upstream:remotename)%00%(upstream:remoteref) --ignore-case refs/heads/master refs/remotes/master [87ms]
+2026-04-17 01:01:27.573 [info] > git for-each-ref --sort -committerdate --format %(refname)%00%(objectname)%00%(*objectname) [70ms]
+2026-04-17 01:01:27.616 [info] > git status -z -uall [117ms]
+2026-04-17 01:02:15.655 [info] > git log --oneline --cherry master...master@{upstream} -- [81ms]
+2026-04-17 01:02:17.025 [info] > git pull --tags origin master [1367ms]
+2026-04-17 01:02:17.025 [info] From https://github.com/trovic151hub/todo
+ * branch            master     -> FETCH_HEAD
+fatal: refusing to merge unrelated histories
+2026-04-17 01:02:17.080 [info] > git config --get commit.template [52ms]
+2026-04-17 01:02:17.088 [info] > git for-each-ref --format=%(refname)%00%(upstream:short)%00%(objectname)%00%(upstream:track)%00%(upstream:remotename)%00%(upstream:remoteref) --ignore-case refs/heads/master refs/remotes/master [57ms]
+2026-04-17 01:02:17.146 [info] > git for-each-ref --sort -committerdate --format %(refname)%00%(objectname)%00%(*objectname) [51ms]
+2026-04-17 01:02:17.175 [info] > git status -z -uall [83ms]
+2026-04-17 01:02:18.980 [info] > git config --get commit.template [77ms]
+2026-04-17 01:02:18.989 [info] > git for-each-ref --format=%(refname)%00%(upstream:short)%00%(objectname)%00%(upstream:track)%00%(upstream:remotename)%00%(upstream:remoteref) --ignore-case refs/heads/master refs/remotes/master [80ms]
+2026-04-17 01:02:19.070 [info] > git for-each-ref --sort -committerdate --format %(refname)%00%(objectname)%00%(*objectname) [73ms]

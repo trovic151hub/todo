@@ -1,11 +1,23 @@
-// src/components/TodoList.jsx
+import { ClipboardList } from "lucide-react";
 import TodoItem from "./TodoItem";
 
-export default function TodoList({ todos, toggleTodo, deleteTodo, editTodo }) {
+function EmptyState({ filtered }) {
   return (
-    <div className="todo-list card">
+    <div className="empty-state">
+      <div className="empty-icon">
+        <ClipboardList size={48} strokeWidth={1.2} />
+      </div>
+      <h3>{filtered ? "No matching tasks" : "All clear!"}</h3>
+      <p>{filtered ? "Try a different search or filter." : "Add your first task above to get started."}</p>
+    </div>
+  );
+}
+
+export default function TodoList({ todos, toggleTodo, deleteTodo, editTodo, isFiltered }) {
+  return (
+    <div className="todo-list">
       {todos.length === 0 ? (
-        <p className="muted">No tasks yet — add your first task above.</p>
+        <EmptyState filtered={isFiltered} />
       ) : (
         todos.map((t) => (
           <TodoItem
