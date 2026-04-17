@@ -1,4 +1,3 @@
-// src/components/TodoInput.jsx
 import { useState } from "react";
 
 export default function TodoInput({ addTodo, categories = ["General"] }) {
