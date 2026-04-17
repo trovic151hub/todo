@@ -729,6 +729,85 @@ html.dark .badge-shopping { background: #064e3b; color: #34d399; }
 html.dark .badge-school   { background: #451a03; color: #fbbf24; }
 
 /* ============================================================
+   Task Colours
+   ============================================================ */
+
+/* Colour toggle button in TodoInput */
+.color-toggle { position: relative; }
+.color-toggle-dot {
+  display: block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.color-toggle.has-color {
+  border-width: 2px;
+}
+
+/* Colour row (below the form, like date-row) */
+.color-row { flex-wrap: wrap; gap: 8px; }
+
+/* Colour picker label inside edit mode */
+.color-picker-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-sub);
+  margin-top: 8px;
+  margin-bottom: 4px;
+}
+
+/* Swatch row */
+.color-picker-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+/* Individual swatch */
+.color-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: var(--border);
+  color: white;
+  transition: transform 0.12s, border-color 0.12s;
+  flex-shrink: 0;
+}
+.color-swatch:hover  { transform: scale(1.18); }
+.color-swatch.selected { border-color: var(--text); transform: scale(1.12); }
+
+/* "None" swatch (no color value, first swatch) */
+.color-swatch:first-child {
+  background: var(--surface-2);
+  border-color: var(--border);
+  color: var(--muted);
+}
+.color-swatch:first-child.selected { border-color: var(--accent); }
+
+/* Tiny colored dot shown in view mode */
+.color-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+
+/* ============================================================
    Stats Panel
    ============================================================ */
 

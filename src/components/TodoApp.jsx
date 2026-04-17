@@ -231,12 +231,13 @@ export default function TodoApp({ user }) {
   }, [todos]);
 
   // CRUD
-  const addTodo = async (text, category = "General", dueDate = null, priority = null) => {
+  const addTodo = async (text, category = "General", dueDate = null, priority = null, color = null) => {
     const trimmed = text.trim();
     if (!trimmed) return;
     await addDoc(todosCol, {
       text: trimmed, completed: false, uid, category,
       dueDate: dueDate || null, priority: priority || null,
+      color: color || null,
       createdAt: serverTimestamp(),
     });
     addToast("Task added!", "success");
@@ -250,13 +251,13 @@ export default function TodoApp({ user }) {
     if (nowDone) addToast("Task completed! 🎉", "success");
   };
 
-  const editTodo = async (id, newText, newCategory, newDueDate, newPriority = null, newNote = null) => {
+  const editTodo = async (id, newText, newCategory, newDueDate, newPriority = null, newNote = null, newColor = null) => {
     const trimmed = newText.trim();
     if (!trimmed) return;
     await updateDoc(doc(db, "todos", id), {
       text: trimmed, category: newCategory,
       dueDate: newDueDate || null, priority: newPriority || null,
-      note: newNote || null,
+      note: newNote || null, color: newColor || null,
     });
     addToast("Task updated.", "info");
   };

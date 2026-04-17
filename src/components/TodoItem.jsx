@@ -1,11 +1,44 @@
 import { useState } from "react";
 import {
   Pencil, Trash2, Check, X, Clock, AlertCircle,
-  Flag, FileText, ChevronDown, ChevronUp, Square, CheckSquare,
+  Flag, FileText, ChevronDown, ChevronUp, Square, CheckSquare, Palette,
 } from "lucide-react";
 
 const CATS       = ["General", "Work", "Personal", "Shopping", "School"];
 const PRIORITIES = ["None", "Low", "Medium", "High"];
+
+export const TASK_COLORS = [
+  { name: "None",   value: "" },
+  { name: "Red",    value: "#ef4444" },
+  { name: "Orange", value: "#f97316" },
+  { name: "Amber",  value: "#f59e0b" },
+  { name: "Green",  value: "#22c55e" },
+  { name: "Teal",   value: "#14b8a6" },
+  { name: "Blue",   value: "#3b82f6" },
+  { name: "Violet", value: "#8b5cf6" },
+  { name: "Pink",   value: "#ec4899" },
+];
+
+function ColorPicker({ value, onChange }) {
+  return (
+    <div className="color-picker-row" role="group" aria-label="Task color">
+      {TASK_COLORS.map(c => (
+        <button
+          key={c.name}
+          type="button"
+          className={`color-swatch${c.value === value ? " selected" : ""}`}
+          style={c.value ? { background: c.value } : undefined}
+          onClick={() => onChange(c.value)}
+          title={c.name}
+          aria-label={c.name}
+          aria-pressed={c.value === value}
+        >
+          {c.value === value && <Check size={10} strokeWidth={3} />}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 function formatDate(dateStr) {
   if (!dateStr) return null;
@@ -30,11 +63,16 @@ export default function TodoItem({
   const [dueDate,  setDueDate]  = useState(todo.dueDate  || "");
   const [priority, setPriority] = useState(todo.priority || "None");
   const [note,     setNote]     = useState(todo.note     || "");
+  const [color,    setColor]    = useState(todo.color    || "");
   const [noteOpen, setNoteOpen] = useState(false);
 
   const overdue = !todo.completed && isOverdue(todo.dueDate);
   const prio    = todo.priority || null;
   const hasNote = !!todo.note?.trim();
+
+  const rowStyle = todo.color
+    ? { borderLeft: `3px solid ${todo.color}` }
+    : undefined;
 
   const save = () => {
     if (!value.trim()) return;
@@ -43,6 +81,7 @@ export default function TodoItem({
       dueDate || null,
       priority === "None" ? null : priority,
       note.trim() || null,
+      color || null,
     );
     setIsEditing(false);
   };
@@ -54,12 +93,11 @@ export default function TodoItem({
     setDueDate(todo.dueDate   || "");
     setPriority(todo.priority || "None");
     setNote(todo.note         || "");
+    setColor(todo.color       || "");
   };
 
-  // In select mode the whole row is a click-target
   const handleRowClick = (e) => {
     if (!selectMode) return;
-    // Don't fire if clicking a button or input inside the row
     if (e.target.closest("button, input, select, textarea, a")) return;
     onToggleSelect(todo.id);
   };
@@ -70,15 +108,15 @@ export default function TodoItem({
         "todo-row",
         todo.completed ? "completed" : "",
         overdue        ? "overdue"   : "",
-        prio           ? `prio-${prio.toLowerCase()}` : "",
+        !todo.color && prio ? `prio-${prio.toLowerCase()}` : "",
         hasNote        ? "has-note"  : "",
         selectMode     ? "selectable": "",
         selected       ? "selected"  : "",
       ].filter(Boolean).join(" ")}
+      style={rowStyle}
       onClick={handleRowClick}
     >
       <div className="left">
-        {/* Selection checkbox (select mode) OR complete checkbox (normal) */}
         {selectMode ? (
           <button
             className="select-check"
@@ -97,14 +135,13 @@ export default function TodoItem({
               checked={!!todo.completed}
               onChange={() => toggleTodo(todo.id)}
             />
-            <span className="checkmark">
+            <span className="checkmark" style={todo.color && !todo.completed ? { borderColor: todo.color } : undefined}>
               <Check size={11} strokeWidth={3} />
             </span>
           </label>
         )}
 
         <div className="todo-content">
-          {/* Task title */}
           {isEditing ? (
             <input
               className="edit-input"
@@ -126,7 +163,6 @@ export default function TodoItem({
             </span>
           )}
 
-          {/* Meta row */}
           <div className="todo-meta">
             {prio && (
               <span className={`priority-badge priority-${prio.toLowerCase()}`}>
@@ -146,6 +182,15 @@ export default function TodoItem({
               </span>
             )}
 
+            {/* Color dot — view mode */}
+            {!isEditing && !selectMode && todo.color && (
+              <span
+                className="color-dot"
+                style={{ background: todo.color }}
+                title={`Color: ${TASK_COLORS.find(c => c.value === todo.color)?.name || "Custom"}`}
+              />
+            )}
+
             {isEditing && (
               <input
                 type="date"
@@ -155,7 +200,6 @@ export default function TodoItem({
               />
             )}
 
-            {/* Note toggle — view mode only */}
             {!isEditing && !selectMode && hasNote && (
               <button
                 className={`note-toggle-btn${noteOpen ? " active" : ""}`}
@@ -170,27 +214,31 @@ export default function TodoItem({
             )}
           </div>
 
-          {/* Note panel — view mode */}
           {!isEditing && noteOpen && hasNote && (
             <div className="note-panel">
               <p className="note-text">{todo.note}</p>
             </div>
           )}
 
-          {/* Note textarea — edit mode */}
           {isEditing && (
-            <textarea
-              className="note-textarea"
-              placeholder="Add a note or description… (optional)"
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              rows={3}
-            />
+            <>
+              <textarea
+                className="note-textarea"
+                placeholder="Add a note or description… (optional)"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                rows={3}
+              />
+              <div className="color-picker-label">
+                <Palette size={12} />
+                Task colour
+              </div>
+              <ColorPicker value={color} onChange={setColor} />
+            </>
           )}
         </div>
       </div>
 
-      {/* Right actions — hidden in select mode */}
       {!selectMode && (
         <div className="right">
           {isEditing ? (
