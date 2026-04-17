@@ -1,7 +1,17 @@
 import { useState, useEffect } from "react";
-import { Menu, X, Sun, Moon, LogOut, CheckSquare, Bell, BellOff } from "lucide-react";
+import {
+  Menu, X, Sun, Moon, LogOut, CheckSquare,
+  Bell, BellOff, AlignJustify,
+} from "lucide-react";
 
-export default function Header({ user, onSignOut, dark, setDark, notifPerm, onRequestNotif }) {
+const DENSITY_LABELS = { compact: "Compact", comfortable: "Comfortable", spacious: "Spacious" };
+const DENSITY_NEXT   = { compact: "comfortable", comfortable: "spacious", spacious: "compact" };
+
+export default function Header({
+  user, onSignOut, dark, setDark,
+  notifPerm, onRequestNotif,
+  density, onCycleDensity,
+}) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
@@ -55,6 +65,10 @@ export default function Header({ user, onSignOut, dark, setDark, notifPerm, onRe
         <button className="btn icon" onClick={() => setDark(d => !d)} aria-label="Toggle theme">
           {dark ? <><Sun size={16} /> Light mode</> : <><Moon size={16} /> Dark mode</>}
         </button>
+        <button className="btn icon" onClick={onCycleDensity} title={`Switch to ${DENSITY_NEXT[density]} view`}>
+          <AlignJustify size={16} />
+          {DENSITY_LABELS[density]} view
+        </button>
         <button
           className={`btn icon${notifPerm === "granted" ? " notif-on" : ""}`}
           onClick={onRequestNotif}
@@ -77,6 +91,17 @@ export default function Header({ user, onSignOut, dark, setDark, notifPerm, onRe
           />
           <span className="user-email">{user.email}</span>
         </div>
+
+        {/* Density toggle */}
+        <button
+          className="btn icon density-btn"
+          onClick={onCycleDensity}
+          title={`Current: ${DENSITY_LABELS[density]} — click for ${DENSITY_NEXT[density]}`}
+          aria-label="Toggle density"
+        >
+          <AlignJustify size={18} />
+          <span className="density-label">{DENSITY_LABELS[density]}</span>
+        </button>
 
         {/* Notification bell */}
         <button

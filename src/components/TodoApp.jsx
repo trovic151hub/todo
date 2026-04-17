@@ -42,6 +42,18 @@ export default function TodoApp({ user }) {
     const saved = localStorage.getItem("todo-dark");
     return saved ? JSON.parse(saved) : false;
   });
+  const [density, setDensity] = useState(() =>
+    localStorage.getItem("todo-density") || "comfortable"
+  );
+
+  useEffect(() => {
+    localStorage.setItem("todo-density", density);
+  }, [density]);
+
+  const cycleDensity = () =>
+    setDensity(d =>
+      d === "compact" ? "comfortable" : d === "comfortable" ? "spacious" : "compact"
+    );
   const [loading,       setLoading]       = useState(true);
   const [showConfetti,  setShowConfetti]  = useState(false);
   const prevActiveRef = useRef(null);
@@ -250,7 +262,7 @@ export default function TodoApp({ user }) {
   const isFiltered = filter !== "all" || catFilter !== "All" || search.trim() !== "";
 
   return (
-    <div className="app">
+    <div className={`app density-${density}`}>
       <Confetti active={showConfetti} />
       <Header
         user={user}
@@ -259,6 +271,8 @@ export default function TodoApp({ user }) {
         setDark={setDark}
         notifPerm={notifPerm}
         onRequestNotif={requestNotifPermission}
+        density={density}
+        onCycleDensity={cycleDensity}
       />
 
       <main className="card main-card">
