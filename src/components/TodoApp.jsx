@@ -4,7 +4,7 @@ import {
   serverTimestamp, query, where, orderBy, onSnapshot,
 } from "firebase/firestore";
 import { signOut } from "firebase/auth";
-import { Search, SortDesc, Trash2, MousePointerClick, CheckCheck, X } from "lucide-react";
+import { Search, SortDesc, Trash2, MousePointerClick, CheckCheck, X, BarChart2 } from "lucide-react";
 import { auth, db } from "../firebase";
 import { useToast } from "../context/ToastContext";
 
@@ -12,7 +12,8 @@ import Header    from "./Header";
 import TodoInput from "./TodoInput";
 import TodoList  from "./TodoList";
 import Footer    from "./Footer";
-import Confetti  from "./Confetti";
+import Confetti    from "./Confetti";
+import StatsPanel  from "./StatsPanel";
 
 const PRESET_CATEGORIES = ["General", "Work", "Personal", "Shopping", "School"];
 const todosCol = collection(db, "todos");
@@ -58,6 +59,7 @@ export default function TodoApp({ user }) {
   const [showConfetti,  setShowConfetti]  = useState(false);
   const [selectMode,    setSelectMode]    = useState(false);
   const [selectedIds,   setSelectedIds]   = useState(new Set());
+  const [showStats,     setShowStats]     = useState(false);
   const prevActiveRef = useRef(null);
 
   const toggleSelect = (id) =>
@@ -332,7 +334,7 @@ export default function TodoApp({ user }) {
           </div>
         )}
 
-        {/* Search + Sort */}
+        {/* Search + Sort + Stats toggle */}
         <div className="controls-row">
           <div className="search-wrap">
             <Search size={15} className="search-icon" />
@@ -353,7 +355,18 @@ export default function TodoApp({ user }) {
               <option value="completed">Completed first</option>
             </select>
           </div>
+          <button
+            className={`btn icon stats-toggle-btn${showStats ? " active" : ""}`}
+            onClick={() => setShowStats(s => !s)}
+            title={showStats ? "Hide stats" : "Show stats"}
+            aria-label="Toggle stats"
+          >
+            <BarChart2 size={17} />
+          </button>
         </div>
+
+        {/* Stats panel */}
+        {showStats && <StatsPanel todos={todos} />}
 
         {/* Status filter */}
         <div className="filter-row">
