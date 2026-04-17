@@ -168,12 +168,13 @@ export default function TodoApp({ user }) {
   }, [todos]);
 
   // CRUD
-  const addTodo = async (text, category = "General", dueDate = null) => {
+  const addTodo = async (text, category = "General", dueDate = null, priority = null) => {
     const trimmed = text.trim();
     if (!trimmed) return;
     await addDoc(todosCol, {
       text: trimmed, completed: false, uid, category,
-      dueDate: dueDate || null, createdAt: serverTimestamp(),
+      dueDate: dueDate || null, priority: priority || null,
+      createdAt: serverTimestamp(),
     });
     addToast("Task added!", "success");
   };
@@ -186,11 +187,12 @@ export default function TodoApp({ user }) {
     if (nowDone) addToast("Task completed! 🎉", "success");
   };
 
-  const editTodo = async (id, newText, newCategory, newDueDate) => {
+  const editTodo = async (id, newText, newCategory, newDueDate, newPriority = null) => {
     const trimmed = newText.trim();
     if (!trimmed) return;
     await updateDoc(doc(db, "todos", id), {
-      text: trimmed, category: newCategory, dueDate: newDueDate || null,
+      text: trimmed, category: newCategory,
+      dueDate: newDueDate || null, priority: newPriority || null,
     });
     addToast("Task updated.", "info");
   };
@@ -220,10 +222,12 @@ export default function TodoApp({ user }) {
         (t.category && t.category.toLowerCase().includes(s))
       );
     }
+    const PRIO_ORDER = { High: 0, Medium: 1, Low: 2 };
     if (sort === "newest")    list.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
     if (sort === "oldest")    list.sort((a, b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0));
     if (sort === "az")        list.sort((a, b) => (a.text || "").localeCompare(b.text || ""));
     if (sort === "completed") list.sort((a, b) => (b.completed === a.completed ? 0 : b.completed ? -1 : 1));
+    if (sort === "priority")  list.sort((a, b) => (PRIO_ORDER[a.priority] ?? 3) - (PRIO_ORDER[b.priority] ?? 3));
     return list;
   }, [todos, filter, catFilter, search, sort]);
 
@@ -280,6 +284,7 @@ export default function TodoApp({ user }) {
               <option value="newest">Newest</option>
               <option value="oldest">Oldest</option>
               <option value="az">A → Z</option>
+              <option value="priority">Priority</option>
               <option value="completed">Completed first</option>
             </select>
           </div>

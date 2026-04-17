@@ -1,17 +1,21 @@
 import { useState } from "react";
-import { Plus, Tag, Calendar } from "lucide-react";
+import { Plus, Tag, Calendar, Flag } from "lucide-react";
+
+const PRIORITIES = ["None", "Low", "Medium", "High"];
 
 export default function TodoInput({ addTodo, categories = ["General"] }) {
-  const [input, setInput]       = useState("");
+  const [input,    setInput]    = useState("");
   const [category, setCategory] = useState(categories[0] || "General");
-  const [dueDate, setDueDate]   = useState("");
+  const [priority, setPriority] = useState("None");
+  const [dueDate,  setDueDate]  = useState("");
   const [showDate, setShowDate] = useState(false);
 
   const handleAdd = () => {
     if (!input.trim()) return;
-    addTodo(input, category, dueDate || null);
+    addTodo(input, category, dueDate || null, priority === "None" ? null : priority);
     setInput("");
     setDueDate("");
+    setPriority("None");
   };
 
   return (
@@ -37,6 +41,19 @@ export default function TodoInput({ addTodo, categories = ["General"] }) {
           >
             {categories.map((c) => (
               <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className={`input-addon priority-addon priority-addon-${(priority || "none").toLowerCase()}`}>
+          <Flag size={13} className="addon-icon" />
+          <select
+            value={priority}
+            onChange={(e) => setPriority(e.target.value)}
+            aria-label="Priority"
+          >
+            {PRIORITIES.map((p) => (
+              <option key={p} value={p}>{p}</option>
             ))}
           </select>
         </div>
