@@ -729,6 +729,170 @@ html.dark .badge-shopping { background: #064e3b; color: #34d399; }
 html.dark .badge-school   { background: #451a03; color: #fbbf24; }
 
 /* ============================================================
+   Subtasks
+   ============================================================ */
+
+/* Mini progress bar button — view mode */
+.subtask-progress-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 3px 0;
+  color: var(--text-sub);
+  font-size: 11px;
+  font-weight: 500;
+  margin-top: 3px;
+  margin-bottom: 1px;
+  transition: color 0.15s;
+  max-width: 100%;
+}
+.subtask-progress-btn:hover { color: var(--accent); }
+.subtask-icon { color: var(--accent); flex-shrink: 0; }
+
+.subtask-mini-track {
+  flex: 1;
+  height: 5px;
+  background: var(--border);
+  border-radius: 99px;
+  overflow: hidden;
+  min-width: 48px;
+  max-width: 100px;
+}
+.subtask-mini-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 99px;
+  transition: width 0.35s ease;
+  min-width: 3px;
+}
+.subtask-fraction {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+/* Expanded subtask list — view mode */
+.subtask-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 6px;
+  padding: 8px 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.subtask-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  font-size: 13px;
+}
+.subtask-item input[type="checkbox"] {
+  accent-color: var(--accent);
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.subtask-text { color: var(--text); line-height: 1.4; }
+.subtask-item.done .subtask-text {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+
+/* Subtask editor — edit mode */
+.subtask-editor-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-sub);
+  margin-top: 10px;
+  margin-bottom: 4px;
+}
+
+.subtask-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.subtask-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.subtask-edit-check {
+  accent-color: var(--accent);
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.subtask-edit-text {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.subtask-edit-row.done .subtask-edit-text {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+.subtask-delete-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--muted);
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  border-radius: 4px;
+  transition: color 0.12s, background 0.12s;
+  flex-shrink: 0;
+}
+.subtask-delete-btn:hover { color: var(--danger); background: #fee2e2; }
+html.dark .subtask-delete-btn:hover { background: #450a0a; }
+
+/* Add subtask input row */
+.subtask-add-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 2px;
+}
+.subtask-add-input {
+  flex: 1;
+  font-size: 13px;
+  padding: 5px 9px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s;
+  min-width: 0;
+}
+.subtask-add-input:focus { border-color: var(--accent); }
+.subtask-add-input::placeholder { color: var(--muted); }
+
+/* ============================================================
    Task Colours
    ============================================================ */
 

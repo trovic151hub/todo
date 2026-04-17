@@ -1,7 +1,8 @@
 import { useState } from "react";
 import {
   Pencil, Trash2, Check, X, Clock, AlertCircle,
-  Flag, FileText, ChevronDown, ChevronUp, Square, CheckSquare, Palette,
+  Flag, FileText, ChevronDown, ChevronUp, Square, CheckSquare,
+  Palette, ListChecks, Plus,
 } from "lucide-react";
 
 const CATS       = ["General", "Work", "Personal", "Shopping", "School"];
@@ -53,27 +54,51 @@ function isOverdue(dateStr) {
   return new Date(dateStr + "T00:00:00") < today;
 }
 
+function makeId() {
+  return Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
+
 export default function TodoItem({
-  todo, toggleTodo, deleteTodo, editTodo,
+  todo, toggleTodo, deleteTodo, editTodo, toggleSubtask,
   selectMode = false, selected = false, onToggleSelect,
 }) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [value,    setValue]    = useState(todo.text     || "");
-  const [category, setCategory] = useState(todo.category || "General");
-  const [dueDate,  setDueDate]  = useState(todo.dueDate  || "");
-  const [priority, setPriority] = useState(todo.priority || "None");
-  const [note,     setNote]     = useState(todo.note     || "");
-  const [color,    setColor]    = useState(todo.color    || "");
-  const [noteOpen, setNoteOpen] = useState(false);
+  const [isEditing,    setIsEditing]    = useState(false);
+  const [value,        setValue]        = useState(todo.text     || "");
+  const [category,     setCategory]     = useState(todo.category || "General");
+  const [dueDate,      setDueDate]      = useState(todo.dueDate  || "");
+  const [priority,     setPriority]     = useState(todo.priority || "None");
+  const [note,         setNote]         = useState(todo.note     || "");
+  const [color,        setColor]        = useState(todo.color    || "");
+  const [subtasks,     setSubtasks]     = useState(todo.subtasks || []);
+  const [newSubtask,   setNewSubtask]   = useState("");
+  const [noteOpen,     setNoteOpen]     = useState(false);
+  const [subtasksOpen, setSubtasksOpen] = useState(false);
 
   const overdue = !todo.completed && isOverdue(todo.dueDate);
   const prio    = todo.priority || null;
   const hasNote = !!todo.note?.trim();
 
+  const liveSubtasks   = todo.subtasks || [];
+  const totalSubs      = liveSubtasks.length;
+  const completedSubs  = liveSubtasks.filter(s => s.completed).length;
+  const hasSubtasks    = totalSubs > 0;
+  const subPct         = totalSubs === 0 ? 0 : Math.round((completedSubs / totalSubs) * 100);
+
   const rowStyle = todo.color
     ? { borderLeft: `3px solid ${todo.color}` }
     : undefined;
 
+  // ── Subtask helpers (edit mode) ─────────────────────────────
+  const addSubtaskLocal = () => {
+    if (!newSubtask.trim()) return;
+    setSubtasks(prev => [...prev, { id: makeId(), text: newSubtask.trim(), completed: false }]);
+    setNewSubtask("");
+  };
+  const removeSubtaskLocal = (id) => setSubtasks(prev => prev.filter(s => s.id !== id));
+  const toggleSubtaskLocal = (id) =>
+    setSubtasks(prev => prev.map(s => s.id === id ? { ...s, completed: !s.completed } : s));
+
+  // ── Save / cancel ───────────────────────────────────────────
   const save = () => {
     if (!value.trim()) return;
     editTodo(
@@ -82,6 +107,7 @@ export default function TodoItem({
       priority === "None" ? null : priority,
       note.trim() || null,
       color || null,
+      subtasks,
     );
     setIsEditing(false);
   };
@@ -94,6 +120,7 @@ export default function TodoItem({
     setPriority(todo.priority || "None");
     setNote(todo.note         || "");
     setColor(todo.color       || "");
+    setSubtasks(todo.subtasks || []);
   };
 
   const handleRowClick = (e) => {
@@ -117,6 +144,7 @@ export default function TodoItem({
       onClick={handleRowClick}
     >
       <div className="left">
+        {/* Checkbox / select check */}
         {selectMode ? (
           <button
             className="select-check"
@@ -135,13 +163,17 @@ export default function TodoItem({
               checked={!!todo.completed}
               onChange={() => toggleTodo(todo.id)}
             />
-            <span className="checkmark" style={todo.color && !todo.completed ? { borderColor: todo.color } : undefined}>
+            <span
+              className="checkmark"
+              style={todo.color && !todo.completed ? { borderColor: todo.color } : undefined}
+            >
               <Check size={11} strokeWidth={3} />
             </span>
           </label>
         )}
 
         <div className="todo-content">
+          {/* Title */}
           {isEditing ? (
             <input
               className="edit-input"
@@ -163,6 +195,23 @@ export default function TodoItem({
             </span>
           )}
 
+          {/* Subtask mini progress bar — view mode, below title */}
+          {!isEditing && hasSubtasks && (
+            <button
+              className="subtask-progress-btn"
+              onClick={() => setSubtasksOpen(o => !o)}
+              aria-label={subtasksOpen ? "Hide subtasks" : "Show subtasks"}
+            >
+              <ListChecks size={11} className="subtask-icon" />
+              <div className="subtask-mini-track">
+                <div className="subtask-mini-fill" style={{ width: `${subPct}%` }} />
+              </div>
+              <span className="subtask-fraction">{completedSubs}/{totalSubs}</span>
+              {subtasksOpen ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
+            </button>
+          )}
+
+          {/* Meta row */}
           <div className="todo-meta">
             {prio && (
               <span className={`priority-badge priority-${prio.toLowerCase()}`}>
@@ -182,7 +231,6 @@ export default function TodoItem({
               </span>
             )}
 
-            {/* Color dot — view mode */}
             {!isEditing && !selectMode && todo.color && (
               <span
                 className="color-dot"
@@ -214,12 +262,33 @@ export default function TodoItem({
             )}
           </div>
 
+          {/* Note — view mode */}
           {!isEditing && noteOpen && hasNote && (
             <div className="note-panel">
               <p className="note-text">{todo.note}</p>
             </div>
           )}
 
+          {/* Subtask list — view mode expanded */}
+          {!isEditing && subtasksOpen && hasSubtasks && (
+            <div className="subtask-list">
+              {liveSubtasks.map(s => (
+                <label
+                  key={s.id}
+                  className={`subtask-item${s.completed ? " done" : ""}`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={s.completed}
+                    onChange={() => toggleSubtask(todo.id, s.id)}
+                  />
+                  <span className="subtask-text">{s.text}</span>
+                </label>
+              ))}
+            </div>
+          )}
+
+          {/* Edit mode expansions */}
           {isEditing && (
             <>
               <textarea
@@ -229,16 +298,68 @@ export default function TodoItem({
                 onChange={(e) => setNote(e.target.value)}
                 rows={3}
               />
+
               <div className="color-picker-label">
                 <Palette size={12} />
                 Task colour
               </div>
               <ColorPicker value={color} onChange={setColor} />
+
+              {/* Subtask editor */}
+              <div className="subtask-editor-label">
+                <ListChecks size={12} />
+                Subtasks
+              </div>
+
+              <div className="subtask-editor">
+                {subtasks.map(s => (
+                  <div key={s.id} className={`subtask-edit-row${s.completed ? " done" : ""}`}>
+                    <input
+                      type="checkbox"
+                      checked={s.completed}
+                      onChange={() => toggleSubtaskLocal(s.id)}
+                      className="subtask-edit-check"
+                    />
+                    <span className="subtask-edit-text">{s.text}</span>
+                    <button
+                      type="button"
+                      className="subtask-delete-btn"
+                      onClick={() => removeSubtaskLocal(s.id)}
+                      aria-label="Remove subtask"
+                    >
+                      <X size={11} />
+                    </button>
+                  </div>
+                ))}
+
+                <div className="subtask-add-row">
+                  <input
+                    type="text"
+                    className="subtask-add-input"
+                    placeholder="Add a subtask…"
+                    value={newSubtask}
+                    onChange={(e) => setNewSubtask(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") { e.preventDefault(); addSubtaskLocal(); }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="btn small secondary"
+                    onClick={addSubtaskLocal}
+                    disabled={!newSubtask.trim()}
+                    aria-label="Add subtask"
+                  >
+                    <Plus size={13} />
+                  </button>
+                </div>
+              </div>
             </>
           )}
         </div>
       </div>
 
+      {/* Right actions */}
       {!selectMode && (
         <div className="right">
           {isEditing ? (

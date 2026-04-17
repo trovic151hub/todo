@@ -14,7 +14,7 @@ function EmptyState({ filtered }) {
 }
 
 export default function TodoList({
-  todos, toggleTodo, deleteTodo, editTodo, isFiltered,
+  todos, toggleTodo, deleteTodo, editTodo, toggleSubtask, isFiltered,
   selectMode, selectedIds, onToggleSelect,
 }) {
   return (
@@ -29,6 +29,7 @@ export default function TodoList({
             toggleTodo={toggleTodo}
             deleteTodo={deleteTodo}
             editTodo={editTodo}
+            toggleSubtask={toggleSubtask}
             selectMode={selectMode}
             selected={selectedIds?.has(t.id) ?? false}
             onToggleSelect={onToggleSelect}

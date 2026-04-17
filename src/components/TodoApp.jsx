@@ -251,15 +251,25 @@ export default function TodoApp({ user }) {
     if (nowDone) addToast("Task completed! 🎉", "success");
   };
 
-  const editTodo = async (id, newText, newCategory, newDueDate, newPriority = null, newNote = null, newColor = null) => {
+  const editTodo = async (id, newText, newCategory, newDueDate, newPriority = null, newNote = null, newColor = null, newSubtasks = []) => {
     const trimmed = newText.trim();
     if (!trimmed) return;
     await updateDoc(doc(db, "todos", id), {
       text: trimmed, category: newCategory,
       dueDate: newDueDate || null, priority: newPriority || null,
       note: newNote || null, color: newColor || null,
+      subtasks: newSubtasks || [],
     });
     addToast("Task updated.", "info");
+  };
+
+  const toggleSubtask = async (todoId, subtaskId) => {
+    const t = todos.find(x => x.id === todoId);
+    if (!t) return;
+    const updated = (t.subtasks || []).map(s =>
+      s.id === subtaskId ? { ...s, completed: !s.completed } : s
+    );
+    await updateDoc(doc(db, "todos", todoId), { subtasks: updated });
   };
 
   const deleteTodo = async (id) => {
@@ -448,6 +458,7 @@ export default function TodoApp({ user }) {
             toggleTodo={toggleTodo}
             deleteTodo={deleteTodo}
             editTodo={editTodo}
+            toggleSubtask={toggleSubtask}
             isFiltered={isFiltered}
             selectMode={selectMode}
             selectedIds={selectedIds}
