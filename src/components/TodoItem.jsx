@@ -2,23 +2,13 @@ import { useState } from "react";
 import {
   Pencil, Trash2, Check, X, Clock, AlertCircle,
   Flag, FileText, ChevronDown, ChevronUp, Square, CheckSquare,
-  Palette, ListChecks, Plus,
+  Palette, ListChecks, Plus, GripVertical,
 } from "lucide-react";
+
+import { TASK_COLORS } from "../taskColors";
 
 const CATS       = ["General", "Work", "Personal", "Shopping", "School"];
 const PRIORITIES = ["None", "Low", "Medium", "High"];
-
-export const TASK_COLORS = [
-  { name: "None",   value: "" },
-  { name: "Red",    value: "#ef4444" },
-  { name: "Orange", value: "#f97316" },
-  { name: "Amber",  value: "#f59e0b" },
-  { name: "Green",  value: "#22c55e" },
-  { name: "Teal",   value: "#14b8a6" },
-  { name: "Blue",   value: "#3b82f6" },
-  { name: "Violet", value: "#8b5cf6" },
-  { name: "Pink",   value: "#ec4899" },
-];
 
 function ColorPicker({ value, onChange }) {
   return (
@@ -60,6 +50,7 @@ function makeId() {
 
 export default function TodoItem({
   todo, toggleTodo, deleteTodo, editTodo, toggleSubtask,
+  isDragMode = false,
   selectMode = false, selected = false, onToggleSelect,
 }) {
   const [isEditing,    setIsEditing]    = useState(false);
@@ -144,6 +135,13 @@ export default function TodoItem({
       onClick={handleRowClick}
     >
       <div className="left">
+        {/* Drag handle — shown in manual sort mode */}
+        {isDragMode && (
+          <span className="drag-handle" aria-hidden="true">
+            <GripVertical size={16} />
+          </span>
+        )}
+
         {/* Checkbox / select check */}
         {selectMode ? (
           <button

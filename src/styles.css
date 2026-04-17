@@ -729,6 +729,29 @@ html.dark .badge-shopping { background: #064e3b; color: #34d399; }
 html.dark .badge-school   { background: #451a03; color: #fbbf24; }
 
 /* ============================================================
+   Drag to Reorder
+   ============================================================ */
+
+/* Wrapper div (TodoList) */
+.drag-item { position: relative; transition: opacity 0.15s; }
+.drag-item.dragging  { opacity: 0.35; }
+.drag-item.drag-over { border-top: 2px solid var(--accent); }
+
+/* Drag handle inside TodoItem */
+.drag-handle {
+  display: flex;
+  align-items: center;
+  color: var(--muted);
+  cursor: grab;
+  padding: 0 2px 0 0;
+  flex-shrink: 0;
+  touch-action: none;
+  transition: color 0.12s;
+}
+.drag-handle:active { cursor: grabbing; }
+.drag-item:hover .drag-handle { color: var(--text-sub); }
+
+/* ============================================================
    Subtasks
    ============================================================ */
 

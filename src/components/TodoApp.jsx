@@ -263,6 +263,14 @@ export default function TodoApp({ user }) {
     addToast("Task updated.", "info");
   };
 
+  const reorderTodos = async (reorderedList) => {
+    await Promise.all(
+      reorderedList.map((t, i) =>
+        updateDoc(doc(db, "todos", t.id), { orderIndex: i })
+      )
+    );
+  };
+
   const toggleSubtask = async (todoId, subtaskId) => {
     const t = todos.find(x => x.id === todoId);
     if (!t) return;
@@ -303,6 +311,7 @@ export default function TodoApp({ user }) {
     if (sort === "az")        list.sort((a, b) => (a.text || "").localeCompare(b.text || ""));
     if (sort === "completed") list.sort((a, b) => (b.completed === a.completed ? 0 : b.completed ? -1 : 1));
     if (sort === "priority")  list.sort((a, b) => (PRIO_ORDER[a.priority] ?? 3) - (PRIO_ORDER[b.priority] ?? 3));
+    if (sort === "manual")    list.sort((a, b) => (a.orderIndex ?? 99999) - (b.orderIndex ?? 99999));
     return list;
   }, [todos, filter, catFilter, search, sort]);
 
@@ -364,6 +373,7 @@ export default function TodoApp({ user }) {
               <option value="az">A → Z</option>
               <option value="priority">Priority</option>
               <option value="completed">Completed first</option>
+              <option value="manual">Manual order</option>
             </select>
           </div>
           <button
@@ -459,6 +469,8 @@ export default function TodoApp({ user }) {
             deleteTodo={deleteTodo}
             editTodo={editTodo}
             toggleSubtask={toggleSubtask}
+            onReorder={reorderTodos}
+            sortMode={sort}
             isFiltered={isFiltered}
             selectMode={selectMode}
             selectedIds={selectedIds}

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Plus, Tag, Calendar, Flag, Palette, Check, X } from "lucide-react";
-import { TASK_COLORS } from "./TodoItem";
+import { TASK_COLORS } from "../taskColors";
 
 const PRIORITIES = ["None", "Low", "Medium", "High"];
 
