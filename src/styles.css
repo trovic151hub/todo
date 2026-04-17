@@ -1114,6 +1114,22 @@ html.dark .auth-container {
 }
 
 /* ============================================================
+   Confetti
+   ============================================================ */
+.confetti-wrap {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9998;
+  overflow: hidden;
+}
+
+@keyframes confetti-fall {
+  0%   { opacity: 1; transform: translateY(0)    translateX(0)             rotate(0deg); }
+  100% { opacity: 0; transform: translateY(100vh) translateX(var(--drift))  rotate(var(--rotate)); }
+}
+
+/* ============================================================
    Responsive — Tablet  (≤ 720 px)
    ============================================================ */
 @media (max-width: 720px) {

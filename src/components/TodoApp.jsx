@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import {
   collection, addDoc, deleteDoc, doc, updateDoc,
   serverTimestamp, query, where, orderBy, onSnapshot,
@@ -12,6 +12,7 @@ import Header    from "./Header";
 import TodoInput from "./TodoInput";
 import TodoList  from "./TodoList";
 import Footer    from "./Footer";
+import Confetti  from "./Confetti";
 
 const PRESET_CATEGORIES = ["General", "Work", "Personal", "Shopping", "School"];
 const todosCol = collection(db, "todos");
@@ -41,7 +42,9 @@ export default function TodoApp({ user }) {
     const saved = localStorage.getItem("todo-dark");
     return saved ? JSON.parse(saved) : false;
   });
-  const [loading, setLoading] = useState(true);
+  const [loading,       setLoading]       = useState(true);
+  const [showConfetti,  setShowConfetti]  = useState(false);
+  const prevActiveRef = useRef(null);
   const [notifPerm, setNotifPerm] = useState(
     "Notification" in window ? Notification.permission : "unsupported"
   );
@@ -58,6 +61,19 @@ export default function TodoApp({ user }) {
     document.title = active > 0 ? `(${active}) To-Do` : "To-Do";
     return () => { document.title = "To-Do"; };
   }, [todos]);
+
+  // Confetti — fires when the last active task is completed
+  useEffect(() => {
+    if (loading) return;
+    const active = todos.filter(t => !t.completed).length;
+    const total  = todos.length;
+    if (prevActiveRef.current !== null && prevActiveRef.current > 0 && active === 0 && total > 0) {
+      setShowConfetti(true);
+      const t = setTimeout(() => setShowConfetti(false), 5000);
+      return () => clearTimeout(t);
+    }
+    prevActiveRef.current = active;
+  }, [todos, loading]);
 
   // Realtime listener
   useEffect(() => {
@@ -235,6 +251,7 @@ export default function TodoApp({ user }) {
 
   return (
     <div className="app">
+      <Confetti active={showConfetti} />
       <Header
         user={user}
         onSignOut={() => signOut(auth)}
