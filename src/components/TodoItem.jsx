@@ -1,7 +1,7 @@
 import { useState } from "react";
 import {
   Pencil, Trash2, Check, X, Clock, AlertCircle,
-  Flag, FileText, ChevronDown, ChevronUp,
+  Flag, FileText, ChevronDown, ChevronUp, Square, CheckSquare,
 } from "lucide-react";
 
 const CATS       = ["General", "Work", "Personal", "Shopping", "School"];
@@ -20,7 +20,10 @@ function isOverdue(dateStr) {
   return new Date(dateStr + "T00:00:00") < today;
 }
 
-export default function TodoItem({ todo, toggleTodo, deleteTodo, editTodo }) {
+export default function TodoItem({
+  todo, toggleTodo, deleteTodo, editTodo,
+  selectMode = false, selected = false, onToggleSelect,
+}) {
   const [isEditing, setIsEditing] = useState(false);
   const [value,    setValue]    = useState(todo.text     || "");
   const [category, setCategory] = useState(todo.category || "General");
@@ -29,9 +32,9 @@ export default function TodoItem({ todo, toggleTodo, deleteTodo, editTodo }) {
   const [note,     setNote]     = useState(todo.note     || "");
   const [noteOpen, setNoteOpen] = useState(false);
 
-  const overdue  = !todo.completed && isOverdue(todo.dueDate);
-  const prio     = todo.priority || null;
-  const hasNote  = !!todo.note?.trim();
+  const overdue = !todo.completed && isOverdue(todo.dueDate);
+  const prio    = todo.priority || null;
+  const hasNote = !!todo.note?.trim();
 
   const save = () => {
     if (!value.trim()) return;
@@ -53,6 +56,14 @@ export default function TodoItem({ todo, toggleTodo, deleteTodo, editTodo }) {
     setNote(todo.note         || "");
   };
 
+  // In select mode the whole row is a click-target
+  const handleRowClick = (e) => {
+    if (!selectMode) return;
+    // Don't fire if clicking a button or input inside the row
+    if (e.target.closest("button, input, select, textarea, a")) return;
+    onToggleSelect(todo.id);
+  };
+
   return (
     <div
       className={[
@@ -61,19 +72,36 @@ export default function TodoItem({ todo, toggleTodo, deleteTodo, editTodo }) {
         overdue        ? "overdue"   : "",
         prio           ? `prio-${prio.toLowerCase()}` : "",
         hasNote        ? "has-note"  : "",
+        selectMode     ? "selectable": "",
+        selected       ? "selected"  : "",
       ].filter(Boolean).join(" ")}
+      onClick={handleRowClick}
     >
       <div className="left">
-        <label className="checkbox-wrap" aria-label="Toggle complete">
-          <input
-            type="checkbox"
-            checked={!!todo.completed}
-            onChange={() => toggleTodo(todo.id)}
-          />
-          <span className="checkmark">
-            <Check size={11} strokeWidth={3} />
-          </span>
-        </label>
+        {/* Selection checkbox (select mode) OR complete checkbox (normal) */}
+        {selectMode ? (
+          <button
+            className="select-check"
+            onClick={() => onToggleSelect(todo.id)}
+            aria-label={selected ? "Deselect task" : "Select task"}
+          >
+            {selected
+              ? <CheckSquare size={20} className="select-check-icon selected" />
+              : <Square      size={20} className="select-check-icon" />
+            }
+          </button>
+        ) : (
+          <label className="checkbox-wrap" aria-label="Toggle complete">
+            <input
+              type="checkbox"
+              checked={!!todo.completed}
+              onChange={() => toggleTodo(todo.id)}
+            />
+            <span className="checkmark">
+              <Check size={11} strokeWidth={3} />
+            </span>
+          </label>
+        )}
 
         <div className="todo-content">
           {/* Task title */}
@@ -91,8 +119,8 @@ export default function TodoItem({ todo, toggleTodo, deleteTodo, editTodo }) {
           ) : (
             <span
               className="todo-text"
-              onDoubleClick={() => setIsEditing(true)}
-              title="Double-click to edit"
+              onDoubleClick={() => !selectMode && setIsEditing(true)}
+              title={selectMode ? undefined : "Double-click to edit"}
             >
               {todo.text}
             </span>
@@ -127,8 +155,8 @@ export default function TodoItem({ todo, toggleTodo, deleteTodo, editTodo }) {
               />
             )}
 
-            {/* Note toggle — only shown in view mode when note exists */}
-            {!isEditing && hasNote && (
+            {/* Note toggle — view mode only */}
+            {!isEditing && !selectMode && hasNote && (
               <button
                 className={`note-toggle-btn${noteOpen ? " active" : ""}`}
                 onClick={() => setNoteOpen(o => !o)}
@@ -162,52 +190,55 @@ export default function TodoItem({ todo, toggleTodo, deleteTodo, editTodo }) {
         </div>
       </div>
 
-      <div className="right">
-        {isEditing ? (
-          <>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="cat-select"
-            >
-              {CATS.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
+      {/* Right actions — hidden in select mode */}
+      {!selectMode && (
+        <div className="right">
+          {isEditing ? (
+            <>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="cat-select"
+              >
+                {CATS.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
 
-            <select
-              value={priority}
-              onChange={(e) => setPriority(e.target.value)}
-              className={`cat-select priority-select priority-select-${priority.toLowerCase()}`}
-              aria-label="Priority"
-            >
-              {PRIORITIES.map((p) => <option key={p} value={p}>{p}</option>)}
-            </select>
+              <select
+                value={priority}
+                onChange={(e) => setPriority(e.target.value)}
+                className={`cat-select priority-select priority-select-${priority.toLowerCase()}`}
+                aria-label="Priority"
+              >
+                {PRIORITIES.map((p) => <option key={p} value={p}>{p}</option>)}
+              </select>
 
-            <button className="btn small primary" onClick={save} title="Save">
-              <Check size={13} /> Save
-            </button>
-            <button className="btn small secondary" onClick={cancel} title="Cancel">
-              <X size={13} />
-            </button>
-          </>
-        ) : (
-          <>
-            <button
-              className="btn small secondary"
-              onClick={() => setIsEditing(true)}
-              title="Edit task"
-            >
-              <Pencil size={13} />
-            </button>
-            <button
-              className="btn small danger"
-              onClick={() => deleteTodo(todo.id)}
-              title="Delete task"
-            >
-              <Trash2 size={13} />
-            </button>
-          </>
-        )}
-      </div>
+              <button className="btn small primary" onClick={save} title="Save">
+                <Check size={13} /> Save
+              </button>
+              <button className="btn small secondary" onClick={cancel} title="Cancel">
+                <X size={13} />
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                className="btn small secondary"
+                onClick={() => setIsEditing(true)}
+                title="Edit task"
+              >
+                <Pencil size={13} />
+              </button>
+              <button
+                className="btn small danger"
+                onClick={() => deleteTodo(todo.id)}
+                title="Delete task"
+              >
+                <Trash2 size={13} />
+              </button>
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }

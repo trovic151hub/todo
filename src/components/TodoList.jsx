@@ -13,7 +13,10 @@ function EmptyState({ filtered }) {
   );
 }
 
-export default function TodoList({ todos, toggleTodo, deleteTodo, editTodo, isFiltered }) {
+export default function TodoList({
+  todos, toggleTodo, deleteTodo, editTodo, isFiltered,
+  selectMode, selectedIds, onToggleSelect,
+}) {
   return (
     <div className="todo-list">
       {todos.length === 0 ? (
@@ -26,6 +29,9 @@ export default function TodoList({ todos, toggleTodo, deleteTodo, editTodo, isFi
             toggleTodo={toggleTodo}
             deleteTodo={deleteTodo}
             editTodo={editTodo}
+            selectMode={selectMode}
+            selected={selectedIds?.has(t.id) ?? false}
+            onToggleSelect={onToggleSelect}
           />
         ))
       )}

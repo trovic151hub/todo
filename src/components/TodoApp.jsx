@@ -4,7 +4,7 @@ import {
   serverTimestamp, query, where, orderBy, onSnapshot,
 } from "firebase/firestore";
 import { signOut } from "firebase/auth";
-import { Search, SortDesc, Trash2 } from "lucide-react";
+import { Search, SortDesc, Trash2, MousePointerClick, CheckCheck, X } from "lucide-react";
 import { auth, db } from "../firebase";
 import { useToast } from "../context/ToastContext";
 
@@ -56,7 +56,40 @@ export default function TodoApp({ user }) {
     );
   const [loading,       setLoading]       = useState(true);
   const [showConfetti,  setShowConfetti]  = useState(false);
+  const [selectMode,    setSelectMode]    = useState(false);
+  const [selectedIds,   setSelectedIds]   = useState(new Set());
   const prevActiveRef = useRef(null);
+
+  const toggleSelect = (id) =>
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+
+  const toggleSelectAll = (visibleTodos) => {
+    const allSelected = visibleTodos.every(t => selectedIds.has(t.id));
+    setSelectedIds(allSelected ? new Set() : new Set(visibleTodos.map(t => t.id)));
+  };
+
+  const exitSelectMode = () => { setSelectMode(false); setSelectedIds(new Set()); };
+
+  const bulkComplete = async () => {
+    const incomplete = [...selectedIds].filter(id => {
+      const t = todos.find(x => x.id === id);
+      return t && !t.completed;
+    });
+    await Promise.all(incomplete.map(id => updateDoc(doc(db, "todos", id), { completed: true })));
+    addToast(`Completed ${incomplete.length} task${incomplete.length !== 1 ? "s" : ""}.`, "success");
+    exitSelectMode();
+  };
+
+  const bulkDelete = async () => {
+    const ids = [...selectedIds];
+    await Promise.all(ids.map(id => deleteDoc(doc(db, "todos", id))));
+    addToast(`Deleted ${ids.length} task${ids.length !== 1 ? "s" : ""}.`, "error");
+    exitSelectMode();
+  };
   const [notifPerm, setNotifPerm] = useState(
     "Notification" in window ? Notification.permission : "unsupported"
   );
@@ -324,23 +357,53 @@ export default function TodoApp({ user }) {
 
         {/* Status filter */}
         <div className="filter-row">
-          <div className="filters">
-            {["all", "active", "completed"].map(f => (
-              <button
-                key={f}
-                className={`btn filter${filter === f ? " active" : ""}`}
-                onClick={() => setFilter(f)}
-              >
-                {f === "all"       ? `All ${totalCount > 0 ? `(${totalCount})` : ""}` :
-                 f === "active"    ? `Active (${activeCount})` :
-                                     `Done (${completedCount})`}
+          {selectMode ? (
+            /* ── Select-mode header ── */
+            <div className="select-mode-bar">
+              <label className="select-all-wrap">
+                <input
+                  type="checkbox"
+                  checked={processedTodos.length > 0 && processedTodos.every(t => selectedIds.has(t.id))}
+                  onChange={() => toggleSelectAll(processedTodos)}
+                  aria-label="Select all"
+                />
+                <span className="select-all-label">
+                  {selectedIds.size > 0 ? `${selectedIds.size} selected` : "Select all"}
+                </span>
+              </label>
+              <button className="btn small secondary" onClick={exitSelectMode}>
+                <X size={13} /> Cancel
               </button>
-            ))}
-          </div>
-          {completedCount > 0 && (
-            <button className="btn small danger" onClick={clearCompleted}>
-              <Trash2 size={13} /> Clear done
-            </button>
+            </div>
+          ) : (
+            /* ── Normal filter header ── */
+            <>
+              <div className="filters">
+                {["all", "active", "completed"].map(f => (
+                  <button
+                    key={f}
+                    className={`btn filter${filter === f ? " active" : ""}`}
+                    onClick={() => setFilter(f)}
+                  >
+                    {f === "all"    ? `All ${totalCount > 0 ? `(${totalCount})` : ""}` :
+                     f === "active" ? `Active (${activeCount})` :
+                                      `Done (${completedCount})`}
+                  </button>
+                ))}
+              </div>
+              <div className="filter-actions">
+                {totalCount > 0 && (
+                  <button className="btn small secondary" onClick={() => setSelectMode(true)}>
+                    <MousePointerClick size={13} /> Select
+                  </button>
+                )}
+                {completedCount > 0 && (
+                  <button className="btn small danger" onClick={clearCompleted}>
+                    <Trash2 size={13} /> Clear done
+                  </button>
+                )}
+              </div>
+            </>
           )}
         </div>
 
@@ -372,7 +435,25 @@ export default function TodoApp({ user }) {
             deleteTodo={deleteTodo}
             editTodo={editTodo}
             isFiltered={isFiltered}
+            selectMode={selectMode}
+            selectedIds={selectedIds}
+            onToggleSelect={toggleSelect}
           />
+        )}
+
+        {/* Bulk action bar */}
+        {selectMode && selectedIds.size > 0 && (
+          <div className="bulk-bar">
+            <span className="bulk-count">{selectedIds.size} task{selectedIds.size !== 1 ? "s" : ""} selected</span>
+            <div className="bulk-actions">
+              <button className="btn small primary" onClick={bulkComplete}>
+                <CheckCheck size={14} /> Complete
+              </button>
+              <button className="btn small danger" onClick={bulkDelete}>
+                <Trash2 size={14} /> Delete
+              </button>
+            </div>
+          </div>
         )}
       </main>
 

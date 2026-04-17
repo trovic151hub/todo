@@ -729,6 +729,95 @@ html.dark .badge-shopping { background: #064e3b; color: #34d399; }
 html.dark .badge-school   { background: #451a03; color: #fbbf24; }
 
 /* ============================================================
+   Bulk Select
+   ============================================================ */
+
+/* Select mode — row becomes clickable */
+.todo-row.selectable { cursor: pointer; user-select: none; }
+.todo-row.selectable:hover { border-color: var(--accent-border); background: var(--accent-light); }
+
+/* Selected row highlight */
+.todo-row.selected {
+  background: var(--accent-light) !important;
+  border-color: var(--accent-border) !important;
+  box-shadow: 0 0 0 2px var(--accent-light);
+}
+
+/* Selection checkbox button */
+.select-check {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: var(--muted);
+  transition: color 0.15s;
+}
+.select-check:hover { color: var(--accent); }
+.select-check-icon.selected { color: var(--accent); }
+
+/* Select-mode header bar (replaces filter row) */
+.select-mode-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 10px;
+}
+
+.select-all-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-sub);
+}
+.select-all-wrap input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.select-all-label { color: var(--text); }
+
+/* Filter actions group */
+.filter-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Bulk action bar — appears at bottom of card */
+.bulk-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding: 12px 14px;
+  background: var(--accent-light);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-sm);
+  animation: fadeInUp 0.2s ease;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.bulk-count {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.bulk-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* ============================================================
    Priority
    ============================================================ */
 
@@ -820,7 +909,7 @@ html.dark .priority-select-low { color: #60a5fa !important; }
   font-size: 13px;
   font-family: var(--font);
   line-height: 1.6;
-  resize: vertical;
+  resize: none;
   outline: none;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
