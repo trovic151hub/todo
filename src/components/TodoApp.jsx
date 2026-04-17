@@ -230,14 +230,26 @@ export default function TodoApp({ user }) {
     return ["All", ...PRESET_CATEGORIES.filter(c => cats.has(c))];
   }, [todos]);
 
-  // CRUD
-  const addTodo = async (text, category = "General", dueDate = null, priority = null, color = null) => {
+  // ── Recurrence helpers ──────────────────────────────────
+  const getNextDueDate = (dueDate, recurrence) => {
+    const base = dueDate ? new Date(dueDate + "T12:00:00") : new Date();
+    if (recurrence === "Daily")   base.setDate(base.getDate() + 1);
+    if (recurrence === "Weekly")  base.setDate(base.getDate() + 7);
+    if (recurrence === "Monthly") base.setMonth(base.getMonth() + 1);
+    return base.toISOString().split("T")[0];
+  };
+
+  const fmtShort = (dateStr) =>
+    new Date(dateStr + "T00:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric" });
+
+  // ── CRUD ───────────────────────────────────────────────
+  const addTodo = async (text, category = "General", dueDate = null, priority = null, color = null, recurrence = null) => {
     const trimmed = text.trim();
     if (!trimmed) return;
     await addDoc(todosCol, {
       text: trimmed, completed: false, uid, category,
       dueDate: dueDate || null, priority: priority || null,
-      color: color || null,
+      color: color || null, recurrence: recurrence || null,
       createdAt: serverTimestamp(),
     });
     addToast("Task added!", "success");
@@ -247,18 +259,27 @@ export default function TodoApp({ user }) {
     const t = todos.find(x => x.id === id);
     if (!t) return;
     const nowDone = !t.completed;
+
+    // Recurring: advance due date instead of completing
+    if (nowDone && t.recurrence) {
+      const nextDate = getNextDueDate(t.dueDate, t.recurrence);
+      await updateDoc(doc(db, "todos", id), { dueDate: nextDate, completed: false });
+      addToast(`↻ ${t.recurrence} · next due ${fmtShort(nextDate)}`, "info");
+      return;
+    }
+
     await updateDoc(doc(db, "todos", id), { completed: nowDone });
     if (nowDone) addToast("Task completed! 🎉", "success");
   };
 
-  const editTodo = async (id, newText, newCategory, newDueDate, newPriority = null, newNote = null, newColor = null, newSubtasks = []) => {
+  const editTodo = async (id, newText, newCategory, newDueDate, newPriority = null, newNote = null, newColor = null, newSubtasks = [], newRecurrence = null) => {
     const trimmed = newText.trim();
     if (!trimmed) return;
     await updateDoc(doc(db, "todos", id), {
       text: trimmed, category: newCategory,
       dueDate: newDueDate || null, priority: newPriority || null,
       note: newNote || null, color: newColor || null,
-      subtasks: newSubtasks || [],
+      subtasks: newSubtasks || [], recurrence: newRecurrence || null,
     });
     addToast("Task updated.", "info");
   };

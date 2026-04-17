@@ -1,14 +1,16 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   Pencil, Trash2, Check, X, Clock, AlertCircle,
   Flag, FileText, ChevronDown, ChevronUp, Square, CheckSquare,
-  Palette, ListChecks, Plus, GripVertical,
+  Palette, ListChecks, Plus, GripVertical, RefreshCw,
 } from "lucide-react";
 
 import { TASK_COLORS } from "../taskColors";
 
-const CATS       = ["General", "Work", "Personal", "Shopping", "School"];
-const PRIORITIES = ["None", "Low", "Medium", "High"];
+const CATS        = ["General", "Work", "Personal", "Shopping", "School"];
+const PRIORITIES  = ["None", "Low", "Medium", "High"];
+const RECURRENCES = ["None", "Daily", "Weekly", "Monthly"];
+const SWIPE_THRESHOLD = 72; // px
 
 function ColorPicker({ value, onChange }) {
   return (
@@ -54,32 +56,71 @@ export default function TodoItem({
   selectMode = false, selected = false, onToggleSelect,
 }) {
   const [isEditing,    setIsEditing]    = useState(false);
-  const [value,        setValue]        = useState(todo.text     || "");
-  const [category,     setCategory]     = useState(todo.category || "General");
-  const [dueDate,      setDueDate]      = useState(todo.dueDate  || "");
-  const [priority,     setPriority]     = useState(todo.priority || "None");
-  const [note,         setNote]         = useState(todo.note     || "");
-  const [color,        setColor]        = useState(todo.color    || "");
-  const [subtasks,     setSubtasks]     = useState(todo.subtasks || []);
+  const [value,        setValue]        = useState(todo.text       || "");
+  const [category,     setCategory]     = useState(todo.category   || "General");
+  const [dueDate,      setDueDate]      = useState(todo.dueDate    || "");
+  const [priority,     setPriority]     = useState(todo.priority   || "None");
+  const [note,         setNote]         = useState(todo.note       || "");
+  const [color,        setColor]        = useState(todo.color      || "");
+  const [recurrence,   setRecurrence]   = useState(todo.recurrence || "None");
+  const [subtasks,     setSubtasks]     = useState(todo.subtasks   || []);
   const [newSubtask,   setNewSubtask]   = useState("");
   const [noteOpen,     setNoteOpen]     = useState(false);
   const [subtasksOpen, setSubtasksOpen] = useState(false);
+
+  // ── Swipe state ───────────────────────────────────────────
+  const swipeStartRef = useRef(null);
+  const [swipeX,    setSwipeX]    = useState(0);
+  const [isSwiping, setIsSwiping] = useState(false);
 
   const overdue = !todo.completed && isOverdue(todo.dueDate);
   const prio    = todo.priority || null;
   const hasNote = !!todo.note?.trim();
 
-  const liveSubtasks   = todo.subtasks || [];
-  const totalSubs      = liveSubtasks.length;
-  const completedSubs  = liveSubtasks.filter(s => s.completed).length;
-  const hasSubtasks    = totalSubs > 0;
-  const subPct         = totalSubs === 0 ? 0 : Math.round((completedSubs / totalSubs) * 100);
+  const liveSubtasks  = todo.subtasks || [];
+  const totalSubs     = liveSubtasks.length;
+  const completedSubs = liveSubtasks.filter(s => s.completed).length;
+  const hasSubtasks   = totalSubs > 0;
+  const subPct        = totalSubs === 0 ? 0 : Math.round((completedSubs / totalSubs) * 100);
 
-  const rowStyle = todo.color
-    ? { borderLeft: `3px solid ${todo.color}` }
-    : undefined;
+  const rowStyle = {
+    ...(todo.color ? { borderLeft: `3px solid ${todo.color}` } : {}),
+    transform: `translateX(${swipeX}px)`,
+    transition: isSwiping ? "none" : "transform 0.25s ease",
+  };
 
-  // ── Subtask helpers (edit mode) ─────────────────────────────
+  // ── Swipe handlers (touch) ────────────────────────────────
+  const handleTouchStart = (e) => {
+    if (isEditing || isDragMode || selectMode) return;
+    if (e.target.closest("button, input, select, textarea, label, a")) return;
+    swipeStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  };
+
+  const handleTouchMove = (e) => {
+    if (!swipeStartRef.current) return;
+    const dx = e.touches[0].clientX - swipeStartRef.current.x;
+    const dy = e.touches[0].clientY - swipeStartRef.current.y;
+    if (!isSwiping && Math.abs(dy) > Math.abs(dx)) {
+      swipeStartRef.current = null;
+      return;
+    }
+    setIsSwiping(true);
+    setSwipeX(Math.max(-120, Math.min(120, dx)));
+  };
+
+  const handleTouchEnd = () => {
+    if (!swipeStartRef.current) return;
+    swipeStartRef.current = null;
+    setIsSwiping(false);
+    if (swipeX >= SWIPE_THRESHOLD) {
+      toggleTodo(todo.id);
+    } else if (swipeX <= -SWIPE_THRESHOLD) {
+      deleteTodo(todo.id);
+    }
+    setSwipeX(0);
+  };
+
+  // ── Subtask helpers ───────────────────────────────────────
   const addSubtaskLocal = () => {
     if (!newSubtask.trim()) return;
     setSubtasks(prev => [...prev, { id: makeId(), text: newSubtask.trim(), completed: false }]);
@@ -89,16 +130,17 @@ export default function TodoItem({
   const toggleSubtaskLocal = (id) =>
     setSubtasks(prev => prev.map(s => s.id === id ? { ...s, completed: !s.completed } : s));
 
-  // ── Save / cancel ───────────────────────────────────────────
+  // ── Save / cancel ─────────────────────────────────────────
   const save = () => {
     if (!value.trim()) return;
     editTodo(
       todo.id, value, category,
       dueDate || null,
-      priority === "None" ? null : priority,
-      note.trim() || null,
-      color || null,
+      priority === "None"   ? null : priority,
+      note.trim()           || null,
+      color                 || null,
       subtasks,
+      recurrence === "None" ? null : recurrence,
     );
     setIsEditing(false);
   };
@@ -106,12 +148,13 @@ export default function TodoItem({
   const cancel = () => {
     setIsEditing(false);
     setValue(todo.text);
-    setCategory(todo.category || "General");
-    setDueDate(todo.dueDate   || "");
-    setPriority(todo.priority || "None");
-    setNote(todo.note         || "");
-    setColor(todo.color       || "");
-    setSubtasks(todo.subtasks || []);
+    setCategory(todo.category     || "General");
+    setDueDate(todo.dueDate       || "");
+    setPriority(todo.priority     || "None");
+    setNote(todo.note             || "");
+    setColor(todo.color           || "");
+    setSubtasks(todo.subtasks     || []);
+    setRecurrence(todo.recurrence || "None");
   };
 
   const handleRowClick = (e) => {
@@ -120,292 +163,327 @@ export default function TodoItem({
     onToggleSelect(todo.id);
   };
 
+  // Swipe reveal opacity
+  const rightOpacity = Math.min(1, swipeX  /  SWIPE_THRESHOLD);
+  const leftOpacity  = Math.min(1, -swipeX / SWIPE_THRESHOLD);
+
   return (
     <div
-      className={[
-        "todo-row",
-        todo.completed ? "completed" : "",
-        overdue        ? "overdue"   : "",
-        !todo.color && prio ? `prio-${prio.toLowerCase()}` : "",
-        hasNote        ? "has-note"  : "",
-        selectMode     ? "selectable": "",
-        selected       ? "selected"  : "",
-      ].filter(Boolean).join(" ")}
-      style={rowStyle}
-      onClick={handleRowClick}
+      className="swipe-wrapper"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
     >
-      <div className="left">
-        {/* Drag handle — shown in manual sort mode */}
-        {isDragMode && (
-          <span className="drag-handle" aria-hidden="true">
-            <GripVertical size={16} />
-          </span>
-        )}
+      {/* Swipe reveals */}
+      <div className="swipe-reveal swipe-reveal-right" style={{ opacity: rightOpacity }}>
+        <Check size={22} strokeWidth={2.5} />
+        <span>{todo.completed ? "Uncheck" : "Complete"}</span>
+      </div>
+      <div className="swipe-reveal swipe-reveal-left" style={{ opacity: leftOpacity }}>
+        <span>Delete</span>
+        <Trash2 size={22} />
+      </div>
 
-        {/* Checkbox / select check */}
-        {selectMode ? (
-          <button
-            className="select-check"
-            onClick={() => onToggleSelect(todo.id)}
-            aria-label={selected ? "Deselect task" : "Select task"}
-          >
-            {selected
-              ? <CheckSquare size={20} className="select-check-icon selected" />
-              : <Square      size={20} className="select-check-icon" />
-            }
-          </button>
-        ) : (
-          <label className="checkbox-wrap" aria-label="Toggle complete">
-            <input
-              type="checkbox"
-              checked={!!todo.completed}
-              onChange={() => toggleTodo(todo.id)}
-            />
-            <span
-              className="checkmark"
-              style={todo.color && !todo.completed ? { borderColor: todo.color } : undefined}
-            >
-              <Check size={11} strokeWidth={3} />
-            </span>
-          </label>
-        )}
-
-        <div className="todo-content">
-          {/* Title */}
-          {isEditing ? (
-            <input
-              className="edit-input"
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter")  save();
-                if (e.key === "Escape") cancel();
-              }}
-              autoFocus
-            />
-          ) : (
-            <span
-              className="todo-text"
-              onDoubleClick={() => !selectMode && setIsEditing(true)}
-              title={selectMode ? undefined : "Double-click to edit"}
-            >
-              {todo.text}
+      {/* ── Main row ── */}
+      <div
+        className={[
+          "todo-row",
+          todo.completed ? "completed" : "",
+          overdue        ? "overdue"   : "",
+          !todo.color && prio ? `prio-${prio.toLowerCase()}` : "",
+          hasNote        ? "has-note"  : "",
+          selectMode     ? "selectable": "",
+          selected       ? "selected"  : "",
+        ].filter(Boolean).join(" ")}
+        style={rowStyle}
+        onClick={handleRowClick}
+      >
+        <div className="left">
+          {/* Drag handle */}
+          {isDragMode && (
+            <span className="drag-handle" aria-hidden="true">
+              <GripVertical size={16} />
             </span>
           )}
 
-          {/* Subtask mini progress bar — view mode, below title */}
-          {!isEditing && hasSubtasks && (
+          {/* Checkbox / select check */}
+          {selectMode ? (
             <button
-              className="subtask-progress-btn"
-              onClick={() => setSubtasksOpen(o => !o)}
-              aria-label={subtasksOpen ? "Hide subtasks" : "Show subtasks"}
+              className="select-check"
+              onClick={() => onToggleSelect(todo.id)}
+              aria-label={selected ? "Deselect task" : "Select task"}
             >
-              <ListChecks size={11} className="subtask-icon" />
-              <div className="subtask-mini-track">
-                <div className="subtask-mini-fill" style={{ width: `${subPct}%` }} />
-              </div>
-              <span className="subtask-fraction">{completedSubs}/{totalSubs}</span>
-              {subtasksOpen ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
+              {selected
+                ? <CheckSquare size={20} className="select-check-icon selected" />
+                : <Square      size={20} className="select-check-icon" />
+              }
             </button>
+          ) : (
+            <label className="checkbox-wrap" aria-label="Toggle complete">
+              <input
+                type="checkbox"
+                checked={!!todo.completed}
+                onChange={() => toggleTodo(todo.id)}
+              />
+              <span
+                className="checkmark"
+                style={todo.color && !todo.completed ? { borderColor: todo.color } : undefined}
+              >
+                <Check size={11} strokeWidth={3} />
+              </span>
+            </label>
           )}
 
-          {/* Meta row */}
-          <div className="todo-meta">
-            {prio && (
-              <span className={`priority-badge priority-${prio.toLowerCase()}`}>
-                <Flag size={9} strokeWidth={2.5} />
-                {prio}
-              </span>
-            )}
-
-            <span className={`badge badge-${(todo.category || "General").toLowerCase()}`}>
-              {todo.category || "General"}
-            </span>
-
-            {todo.dueDate && (
-              <span className={`due-badge${overdue ? " overdue" : ""}`}>
-                {overdue ? <AlertCircle size={11} /> : <Clock size={11} />}
-                {overdue ? "Overdue · " : ""}{formatDate(todo.dueDate)}
-              </span>
-            )}
-
-            {!isEditing && !selectMode && todo.color && (
-              <span
-                className="color-dot"
-                style={{ background: todo.color }}
-                title={`Color: ${TASK_COLORS.find(c => c.value === todo.color)?.name || "Custom"}`}
-              />
-            )}
-
-            {isEditing && (
+          <div className="todo-content">
+            {/* Title */}
+            {isEditing ? (
               <input
-                type="date"
-                className="date-input small"
-                value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
+                className="edit-input"
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter")  save();
+                  if (e.key === "Escape") cancel();
+                }}
+                autoFocus
               />
+            ) : (
+              <span
+                className="todo-text"
+                onDoubleClick={() => !selectMode && setIsEditing(true)}
+                title={selectMode ? undefined : "Double-click to edit"}
+              >
+                {todo.text}
+              </span>
             )}
 
-            {!isEditing && !selectMode && hasNote && (
+            {/* Subtask mini progress bar */}
+            {!isEditing && hasSubtasks && (
               <button
-                className={`note-toggle-btn${noteOpen ? " active" : ""}`}
-                onClick={() => setNoteOpen(o => !o)}
-                title={noteOpen ? "Hide note" : "Show note"}
-                aria-label={noteOpen ? "Hide note" : "Show note"}
+                className="subtask-progress-btn"
+                onClick={() => setSubtasksOpen(o => !o)}
+                aria-label={subtasksOpen ? "Hide subtasks" : "Show subtasks"}
               >
-                <FileText size={11} />
-                Note
-                {noteOpen ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
+                <ListChecks size={11} className="subtask-icon" />
+                <div className="subtask-mini-track">
+                  <div className="subtask-mini-fill" style={{ width: `${subPct}%` }} />
+                </div>
+                <span className="subtask-fraction">{completedSubs}/{totalSubs}</span>
+                {subtasksOpen ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
               </button>
             )}
-          </div>
 
-          {/* Note — view mode */}
-          {!isEditing && noteOpen && hasNote && (
-            <div className="note-panel">
-              <p className="note-text">{todo.note}</p>
-            </div>
-          )}
+            {/* Meta row */}
+            <div className="todo-meta">
+              {prio && (
+                <span className={`priority-badge priority-${prio.toLowerCase()}`}>
+                  <Flag size={9} strokeWidth={2.5} />
+                  {prio}
+                </span>
+              )}
 
-          {/* Subtask list — view mode expanded */}
-          {!isEditing && subtasksOpen && hasSubtasks && (
-            <div className="subtask-list">
-              {liveSubtasks.map(s => (
-                <label
-                  key={s.id}
-                  className={`subtask-item${s.completed ? " done" : ""}`}
+              <span className={`badge badge-${(todo.category || "General").toLowerCase()}`}>
+                {todo.category || "General"}
+              </span>
+
+              {todo.dueDate && (
+                <span className={`due-badge${overdue ? " overdue" : ""}`}>
+                  {overdue ? <AlertCircle size={11} /> : <Clock size={11} />}
+                  {overdue ? "Overdue · " : ""}{formatDate(todo.dueDate)}
+                </span>
+              )}
+
+              {/* Recurrence badge */}
+              {!isEditing && todo.recurrence && (
+                <span className="recurrence-badge">
+                  <RefreshCw size={9} strokeWidth={2.5} />
+                  {todo.recurrence}
+                </span>
+              )}
+
+              {!isEditing && !selectMode && todo.color && (
+                <span
+                  className="color-dot"
+                  style={{ background: todo.color }}
+                  title={`Color: ${TASK_COLORS.find(c => c.value === todo.color)?.name || "Custom"}`}
+                />
+              )}
+
+              {isEditing && (
+                <input
+                  type="date"
+                  className="date-input small"
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
+                />
+              )}
+
+              {!isEditing && !selectMode && hasNote && (
+                <button
+                  className={`note-toggle-btn${noteOpen ? " active" : ""}`}
+                  onClick={() => setNoteOpen(o => !o)}
+                  title={noteOpen ? "Hide note" : "Show note"}
+                  aria-label={noteOpen ? "Hide note" : "Show note"}
                 >
-                  <input
-                    type="checkbox"
-                    checked={s.completed}
-                    onChange={() => toggleSubtask(todo.id, s.id)}
-                  />
-                  <span className="subtask-text">{s.text}</span>
-                </label>
-              ))}
+                  <FileText size={11} />
+                  Note
+                  {noteOpen ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
+                </button>
+              )}
             </div>
-          )}
 
-          {/* Edit mode expansions */}
-          {isEditing && (
-            <>
-              <textarea
-                className="note-textarea"
-                placeholder="Add a note or description… (optional)"
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                rows={3}
-              />
-
-              <div className="color-picker-label">
-                <Palette size={12} />
-                Task colour
+            {/* Note panel */}
+            {!isEditing && noteOpen && hasNote && (
+              <div className="note-panel">
+                <p className="note-text">{todo.note}</p>
               </div>
-              <ColorPicker value={color} onChange={setColor} />
+            )}
 
-              {/* Subtask editor */}
-              <div className="subtask-editor-label">
-                <ListChecks size={12} />
-                Subtasks
-              </div>
-
-              <div className="subtask-editor">
-                {subtasks.map(s => (
-                  <div key={s.id} className={`subtask-edit-row${s.completed ? " done" : ""}`}>
+            {/* Subtask list */}
+            {!isEditing && subtasksOpen && hasSubtasks && (
+              <div className="subtask-list">
+                {liveSubtasks.map(s => (
+                  <label key={s.id} className={`subtask-item${s.completed ? " done" : ""}`}>
                     <input
                       type="checkbox"
                       checked={s.completed}
-                      onChange={() => toggleSubtaskLocal(s.id)}
-                      className="subtask-edit-check"
+                      onChange={() => toggleSubtask(todo.id, s.id)}
                     />
-                    <span className="subtask-edit-text">{s.text}</span>
+                    <span className="subtask-text">{s.text}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+
+            {/* Edit-mode extras */}
+            {isEditing && (
+              <>
+                <textarea
+                  className="note-textarea"
+                  placeholder="Add a note or description… (optional)"
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  rows={3}
+                />
+
+                <div className="color-picker-label">
+                  <Palette size={12} />
+                  Task colour
+                </div>
+                <ColorPicker value={color} onChange={setColor} />
+
+                <div className="subtask-editor-label">
+                  <ListChecks size={12} />
+                  Subtasks
+                </div>
+
+                <div className="subtask-editor">
+                  {subtasks.map(s => (
+                    <div key={s.id} className={`subtask-edit-row${s.completed ? " done" : ""}`}>
+                      <input
+                        type="checkbox"
+                        checked={s.completed}
+                        onChange={() => toggleSubtaskLocal(s.id)}
+                        className="subtask-edit-check"
+                      />
+                      <span className="subtask-edit-text">{s.text}</span>
+                      <button
+                        type="button"
+                        className="subtask-delete-btn"
+                        onClick={() => removeSubtaskLocal(s.id)}
+                        aria-label="Remove subtask"
+                      >
+                        <X size={11} />
+                      </button>
+                    </div>
+                  ))}
+
+                  <div className="subtask-add-row">
+                    <input
+                      type="text"
+                      className="subtask-add-input"
+                      placeholder="Add a subtask…"
+                      value={newSubtask}
+                      onChange={(e) => setNewSubtask(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") { e.preventDefault(); addSubtaskLocal(); }
+                      }}
+                    />
                     <button
                       type="button"
-                      className="subtask-delete-btn"
-                      onClick={() => removeSubtaskLocal(s.id)}
-                      aria-label="Remove subtask"
+                      className="btn small secondary"
+                      onClick={addSubtaskLocal}
+                      disabled={!newSubtask.trim()}
+                      aria-label="Add subtask"
                     >
-                      <X size={11} />
+                      <Plus size={13} />
                     </button>
                   </div>
-                ))}
-
-                <div className="subtask-add-row">
-                  <input
-                    type="text"
-                    className="subtask-add-input"
-                    placeholder="Add a subtask…"
-                    value={newSubtask}
-                    onChange={(e) => setNewSubtask(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") { e.preventDefault(); addSubtaskLocal(); }
-                    }}
-                  />
-                  <button
-                    type="button"
-                    className="btn small secondary"
-                    onClick={addSubtaskLocal}
-                    disabled={!newSubtask.trim()}
-                    aria-label="Add subtask"
-                  >
-                    <Plus size={13} />
-                  </button>
                 </div>
-              </div>
-            </>
-          )}
+              </>
+            )}
+          </div>
         </div>
+
+        {/* Right actions */}
+        {!selectMode && (
+          <div className="right">
+            {isEditing ? (
+              <>
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="cat-select"
+                >
+                  {CATS.map((c) => <option key={c} value={c}>{c}</option>)}
+                </select>
+
+                <select
+                  value={priority}
+                  onChange={(e) => setPriority(e.target.value)}
+                  className={`cat-select priority-select priority-select-${priority.toLowerCase()}`}
+                  aria-label="Priority"
+                >
+                  {PRIORITIES.map((p) => <option key={p} value={p}>{p}</option>)}
+                </select>
+
+                <select
+                  value={recurrence}
+                  onChange={(e) => setRecurrence(e.target.value)}
+                  className="cat-select recurrence-select"
+                  aria-label="Recurrence"
+                >
+                  {RECURRENCES.map((r) => <option key={r} value={r}>{r === "None" ? "No repeat" : `↻ ${r}`}</option>)}
+                </select>
+
+                <button className="btn small primary" onClick={save} title="Save">
+                  <Check size={13} /> Save
+                </button>
+                <button className="btn small secondary" onClick={cancel} title="Cancel">
+                  <X size={13} />
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  className="btn small secondary"
+                  onClick={() => setIsEditing(true)}
+                  title="Edit task"
+                >
+                  <Pencil size={13} />
+                </button>
+                <button
+                  className="btn small danger"
+                  onClick={() => deleteTodo(todo.id)}
+                  title="Delete task"
+                >
+                  <Trash2 size={13} />
+                </button>
+              </>
+            )}
+          </div>
+        )}
       </div>
-
-      {/* Right actions */}
-      {!selectMode && (
-        <div className="right">
-          {isEditing ? (
-            <>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="cat-select"
-              >
-                {CATS.map((c) => <option key={c} value={c}>{c}</option>)}
-              </select>
-
-              <select
-                value={priority}
-                onChange={(e) => setPriority(e.target.value)}
-                className={`cat-select priority-select priority-select-${priority.toLowerCase()}`}
-                aria-label="Priority"
-              >
-                {PRIORITIES.map((p) => <option key={p} value={p}>{p}</option>)}
-              </select>
-
-              <button className="btn small primary" onClick={save} title="Save">
-                <Check size={13} /> Save
-              </button>
-              <button className="btn small secondary" onClick={cancel} title="Cancel">
-                <X size={13} />
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                className="btn small secondary"
-                onClick={() => setIsEditing(true)}
-                title="Edit task"
-              >
-                <Pencil size={13} />
-              </button>
-              <button
-                className="btn small danger"
-                onClick={() => deleteTodo(todo.id)}
-                title="Delete task"
-              >
-                <Trash2 size={13} />
-              </button>
-            </>
-          )}
-        </div>
-      )}
     </div>
   );
 }

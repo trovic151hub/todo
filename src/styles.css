@@ -729,6 +729,87 @@ html.dark .badge-shopping { background: #064e3b; color: #34d399; }
 html.dark .badge-school   { background: #451a03; color: #fbbf24; }
 
 /* ============================================================
+   Swipe to complete / delete (mobile)
+   ============================================================ */
+
+.swipe-wrapper {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+}
+
+/* Reveal backgrounds */
+.swipe-reveal {
+  position: absolute;
+  top: 0; bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 20px;
+  font-size: 13px;
+  font-weight: 600;
+  pointer-events: none;
+  z-index: 0;
+  transition: opacity 0.1s;
+}
+
+.swipe-reveal-right {
+  left: 0;
+  background: #16a34a;
+  color: #fff;
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+}
+
+.swipe-reveal-left {
+  right: 0;
+  background: var(--danger);
+  color: #fff;
+  flex-direction: row-reverse;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+/* The row itself sits on top and slides */
+.swipe-wrapper .todo-row {
+  position: relative;
+  z-index: 1;
+  will-change: transform;
+}
+
+/* ============================================================
+   Recurring tasks
+   ============================================================ */
+
+.recurrence-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: #ede9fe;
+  color: #6d28d9;
+  text-transform: capitalize;
+  letter-spacing: 0.02em;
+}
+html.dark .recurrence-badge { background: #2e1a5e; color: #a78bfa; }
+
+/* Recurrence addon in TodoInput */
+.recurrence-addon {
+  color: var(--text-sub);
+  transition: color 0.15s, border-color 0.15s;
+}
+.recurrence-addon.active {
+  color: #6d28d9;
+  border-color: #a78bfa;
+}
+html.dark .recurrence-addon.active { color: #a78bfa; }
+
+/* Recurrence select in edit mode */
+.recurrence-select { color: #6d28d9; }
+html.dark .recurrence-select { color: #a78bfa; }
+
+/* ============================================================
    Drag to Reorder
    ============================================================ */
 

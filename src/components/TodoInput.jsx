@@ -1,13 +1,15 @@
 import { useState } from "react";
-import { Plus, Tag, Calendar, Flag, Palette, Check, X } from "lucide-react";
+import { Plus, Tag, Calendar, Flag, Palette, Check, X, RefreshCw } from "lucide-react";
 import { TASK_COLORS } from "../taskColors";
 
-const PRIORITIES = ["None", "Low", "Medium", "High"];
+const PRIORITIES  = ["None", "Low", "Medium", "High"];
+const RECURRENCES = ["None", "Daily", "Weekly", "Monthly"];
 
 export default function TodoInput({ addTodo, categories = ["General"] }) {
   const [input,      setInput]      = useState("");
   const [category,   setCategory]   = useState(categories[0] || "General");
   const [priority,   setPriority]   = useState("None");
+  const [recurrence, setRecurrence] = useState("None");
   const [dueDate,    setDueDate]    = useState("");
   const [color,      setColor]      = useState("");
   const [showDate,   setShowDate]   = useState(false);
@@ -17,13 +19,15 @@ export default function TodoInput({ addTodo, categories = ["General"] }) {
     if (!input.trim()) return;
     addTodo(
       input, category,
-      dueDate || null,
-      priority === "None" ? null : priority,
-      color || null,
+      dueDate     || null,
+      priority    === "None"   ? null : priority,
+      color       || null,
+      recurrence  === "None"   ? null : recurrence,
     );
     setInput("");
     setDueDate("");
     setPriority("None");
+    setRecurrence("None");
     setColor("");
     setShowColors(false);
   };
@@ -92,6 +96,19 @@ export default function TodoInput({ addTodo, categories = ["General"] }) {
           }
         </button>
 
+        <div className={`input-addon recurrence-addon${recurrence !== "None" ? " active" : ""}`}>
+          <RefreshCw size={13} className="addon-icon" />
+          <select
+            value={recurrence}
+            onChange={(e) => setRecurrence(e.target.value)}
+            aria-label="Recurrence"
+          >
+            {RECURRENCES.map((r) => (
+              <option key={r} value={r}>{r === "None" ? "Once" : r}</option>
+            ))}
+          </select>
+        </div>
+
         <button className="btn primary" type="submit" disabled={!input.trim()}>
           <Plus size={16} />
           Add
@@ -156,7 +173,7 @@ export default function TodoInput({ addTodo, categories = ["General"] }) {
         </div>
       )}
 
-      <p className="input-hint">Press ↵ Enter to add</p>
+      <p className="input-hint">Press ↵ Enter to add  ·  Swipe right to complete, left to delete on mobile</p>
     </div>
   );
 }
