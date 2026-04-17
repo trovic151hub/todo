@@ -1891,19 +1891,21 @@ html.dark .auth-container {
    Responsive — Tablet  (≤ 720 px)
    ============================================================ */
 @media (max-width: 720px) {
-  .app { margin: 12px auto; gap: 10px; padding: 0 12px 48px; }
+  .app { margin: 12px auto; gap: 10px; padding: 0 12px 56px; }
   .header-right.desktop-only { display: none; }
   .hamburger-btn { display: flex; }
 
-  /* Stack search above sort */
-  .controls-row { flex-direction: column; gap: 6px; }
-  .search-wrap  { width: 100%; }
-  .sort-wrap    { width: 100%; }
+  /* Search takes full width; sort + stats-btn share the row below */
+  .controls-row  { flex-wrap: wrap; gap: 6px; }
+  .search-wrap   { width: 100%; order: 1; }
+  .sort-wrap     { flex: 1;     order: 2; }
   .sort-wrap select { width: 100%; }
+  .stats-toggle-btn { order: 2; flex-shrink: 0; }
 
-  .filter-row { flex-direction: column; align-items: flex-start; gap: 8px; }
+  /* Filter row wraps naturally */
+  .filter-row { flex-wrap: wrap; }
 
-  /* Horizontal-scroll category pills — no line breaks */
+  /* Horizontal-scroll category pills */
   .cat-filter-row {
     flex-wrap: nowrap;
     overflow-x: auto;
@@ -1922,15 +1924,16 @@ html.dark .auth-container {
    Responsive — Mobile  (≤ 480 px)
    ============================================================ */
 @media (max-width: 480px) {
-  /* Edge-to-edge layout */
-  .app { margin: 0; padding: 0 0 64px; gap: 6px; }
+  /* ── Layout ─────────────────────────────────────────────── */
+  .app       { margin: 0; padding: 0 0 80px; gap: 6px; }
   .header    { border-radius: 0; border-left: none; border-right: none; padding: 12px 16px; }
   .main-card { border-radius: 0; border-left: none; border-right: none; padding: 14px 14px 18px; }
   .footer    { border-radius: 0; border-left: none; border-right: none; }
+  .header-left p { display: none; }
 
-  /* Touch-friendly tap targets */
+  /* ── Touch targets ──────────────────────────────────────── */
   .btn        { min-height: 44px; }
-  .btn.small  { min-height: 38px; padding: 6px 12px; }
+  .btn.small  { min-height: 38px; padding: 6px 11px; }
   .btn.icon   { min-height: 42px; min-width: 42px; padding: 10px; }
   .btn.filter { min-height: 38px; }
   .btn.cat-pill { min-height: 32px; }
@@ -1938,34 +1941,75 @@ html.dark .auth-container {
   input[type="email"],
   input[type="password"],
   input[type="date"],
-  select { min-height: 44px; font-size: 16px; /* prevents iOS zoom */ }
+  select { min-height: 44px; font-size: 16px; }
 
-  /* Todo input — full-width text, then controls row */
-  .todo-input { flex-wrap: wrap; gap: 8px; }
-  .todo-input input[type="text"] { width: 100%; }
-  .input-addon { flex: 1; min-width: 0; }
-  .btn.primary[type="submit"] { flex: 0 0 auto; min-width: 80px; }
+  /* ── TodoInput  ─────────────────────────────────────────── */
+  /* Row 1: text input (full width)
+     Row 2: category | priority | recurrence (equal thirds)
+     Row 3: date-btn | color-btn | [spacer] | Add btn       */
+  .todo-input { flex-wrap: wrap; gap: 6px; }
+  .todo-input > input[type="text"]   { width: 100%; order: 1; }
+  .todo-input > .input-addon         { flex: 1 1 28%; min-width: 88px; order: 2; }
+  .todo-input > .btn.date-toggle     { order: 3; flex-shrink: 0; }
+  .todo-input > .btn.color-toggle    { order: 3; flex-shrink: 0; }
+  .todo-input > .btn.primary         { order: 3; flex: 1; min-width: 80px; }
 
-  /* Date picker row stacks */
-  .date-row { flex-wrap: wrap; gap: 8px; }
-  .date-input { flex: 1; min-width: 120px; }
+  /* Date/colour rows */
+  .date-row         { flex-wrap: wrap; gap: 8px; }
+  .date-input       { flex: 1; min-width: 120px; }
+  .color-picker-row { flex-wrap: wrap; gap: 8px; }
+  .color-swatch     { width: 28px; height: 28px; }
 
-  /* Todo rows — column layout so buttons get their own line */
+  /* Shorter hint line */
+  .input-hint { font-size: 10px; }
+
+  /* ── Filter / select-mode rows ──────────────────────────── */
+  .filters    { width: 100%; }
+  .btn.filter { flex: 1; text-align: center; font-size: 12px; padding: 6px 4px; }
+  .filter-actions    { gap: 6px; flex-shrink: 0; }
+  .select-mode-bar   { flex-wrap: wrap; gap: 6px; }
+
+  /* ── Bulk action bar — fixed at bottom for easy reach ───── */
+  .bulk-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    z-index: 200;
+    border-radius: 0;
+    border-left: none; border-right: none; border-bottom: none;
+    padding: 12px 16px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.14);
+    animation: none;
+  }
+
+  /* ── Todo rows — column layout ──────────────────────────── */
   .todo-row {
     flex-direction: column;
     gap: 0;
     padding: 12px 12px 0;
   }
-  .todo-row .left  { width: 100%; padding-bottom: 10px; }
+  .todo-row .left { width: 100%; padding-bottom: 10px; }
   .todo-row .right {
     width: 100%;
+    flex-wrap: wrap;
     justify-content: flex-end;
     padding: 8px 0 10px;
     border-top: 1px solid var(--border);
-    gap: 8px;
+    gap: 6px;
   }
 
-  /* Allow task text to wrap — no truncation on mobile */
+  /* Edit-mode selects: two per row, recurrence spans full width */
+  .todo-row .right .cat-select {
+    flex: 1 1 calc(50% - 6px);
+    min-width: 80px;
+    min-height: 40px;
+    font-size: 14px;
+  }
+  .todo-row .right .recurrence-select {
+    flex: 1 1 100%;
+  }
+
+  /* Task text wraps normally */
   .todo-text {
     white-space: normal;
     word-break: break-word;
@@ -1973,20 +2017,25 @@ html.dark .auth-container {
     text-overflow: unset;
   }
 
-  /* Edit mode — category select gets full space */
-  .cat-select { flex: 1; min-width: 0; }
+  /* ── Stats panel ─────────────────────────────────────────── */
+  .stats-panel  { padding: 12px; gap: 12px; }
+  .stats-grid   { gap: 6px; }
+  .stat-card    { flex: 1 1 calc(33% - 6px); min-width: 72px; padding: 8px 6px; }
+  .stat-value   { font-size: 18px; }
+  .stats-bars .stats-bar-label { min-width: 52px; font-size: 10px; }
 
-  /* Filters take full width */
-  .filters { width: 100%; }
-  .btn.filter { flex: 1; text-align: center; font-size: 12px; padding: 6px 4px; }
+  /* ── Swipe reveals — icon only on narrow screens ─────────── */
+  .swipe-reveal span { display: none; }
+  .swipe-reveal { padding: 0 14px; }
 
-  /* Auth card */
+  /* ── Subtask editor ──────────────────────────────────────── */
+  .subtask-add-row { gap: 6px; }
+  .subtask-add-input { min-width: 0; }
+
+  /* ── Auth card ───────────────────────────────────────────── */
   .auth-card { padding: 24px 16px; margin: 0 8px; border-radius: var(--radius-lg); }
 
-  /* Toast — full-width at bottom */
+  /* ── Toast ───────────────────────────────────────────────── */
   .toast-stack { left: 10px; right: 10px; bottom: 10px; }
   .toast { min-width: unset; width: 100%; font-size: 13px; }
-
-  /* Header brand subtitle — hide on very small screens */
-  .header-left p { display: none; }
 }
