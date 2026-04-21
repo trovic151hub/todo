@@ -4,7 +4,10 @@ import {
   serverTimestamp, query, where, orderBy, onSnapshot,
 } from "firebase/firestore";
 import { signOut } from "firebase/auth";
-import { Search, SortDesc, Trash2, MousePointerClick, CheckCheck, X, BarChart2 } from "lucide-react";
+import {
+  Search, SortDesc, Trash2, MousePointerClick, CheckCheck, X, BarChart2,
+  CalendarDays, AlertTriangle, Flame, CheckCircle2, ListTodo, Folder,
+} from "lucide-react";
 import { auth, db } from "../firebase";
 import { useToast } from "../context/ToastContext";
 
@@ -224,6 +227,26 @@ export default function TodoApp({ user }) {
   const completedCount = todos.filter(t => t.completed).length;
   const activeCount    = totalCount - completedCount;
   const pct            = totalCount === 0 ? 0 : Math.round((completedCount / totalCount) * 100);
+  const todayStr       = new Date().toISOString().split("T")[0];
+
+  const dashboardStats = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const categoryCounts = PRESET_CATEGORIES.map(category => ({
+      category,
+      count: todos.filter(t => (t.category || "General") === category).length,
+    }));
+
+    return {
+      dueToday: todos.filter(t => !t.completed && t.dueDate === todayStr).length,
+      overdue: todos.filter(t =>
+        !t.completed && t.dueDate && new Date(t.dueDate + "T00:00:00") < today
+      ).length,
+      highPriority: todos.filter(t => !t.completed && t.priority === "High").length,
+      recurring: todos.filter(t => !t.completed && t.recurrence).length,
+      categoryCounts,
+    };
+  }, [todos, todayStr]);
 
   const usedCategories = useMemo(() => {
     const cats = new Set(todos.map(t => t.category || "General"));
@@ -352,8 +375,93 @@ export default function TodoApp({ user }) {
         onCycleDensity={cycleDensity}
       />
 
-      <main className="card main-card">
-        <TodoInput addTodo={addTodo} categories={PRESET_CATEGORIES} />
+      <section className="dashboard-hero">
+        <div>
+          <span className="eyebrow">Today’s focus</span>
+          <h2>Build a calmer plan for the day.</h2>
+          <p>
+            {activeCount > 0
+              ? `${activeCount} active task${activeCount !== 1 ? "s" : ""} waiting. Start with what matters most.`
+              : totalCount > 0
+                ? "Everything is complete. You are clear for now."
+                : "Add your first task and turn this into your command center."}
+          </p>
+        </div>
+        <div className="hero-progress-card">
+          <span>{pct}% complete</span>
+          <strong>{completedCount}/{totalCount || 0}</strong>
+          <div className="hero-progress-track">
+            <div style={{ width: `${pct}%` }} />
+          </div>
+        </div>
+      </section>
+
+      <section className="quick-stats">
+        <div className="quick-stat-card">
+          <CalendarDays size={18} />
+          <span>Due today</span>
+          <strong>{dashboardStats.dueToday}</strong>
+        </div>
+        <div className="quick-stat-card danger">
+          <AlertTriangle size={18} />
+          <span>Overdue</span>
+          <strong>{dashboardStats.overdue}</strong>
+        </div>
+        <div className="quick-stat-card warning">
+          <Flame size={18} />
+          <span>High priority</span>
+          <strong>{dashboardStats.highPriority}</strong>
+        </div>
+        <div className="quick-stat-card">
+          <CheckCircle2 size={18} />
+          <span>Completed</span>
+          <strong>{completedCount}</strong>
+        </div>
+      </section>
+
+      <div className="workspace-shell">
+        <aside className="workspace-sidebar">
+          <div className="sidebar-panel">
+            <p className="sidebar-title">Views</p>
+            <button className={`sidebar-link${filter === "all" && catFilter === "All" ? " active" : ""}`} onClick={() => { setFilter("all"); setCatFilter("All"); }}>
+              <ListTodo size={16} /> All tasks <span>{totalCount}</span>
+            </button>
+            <button className={`sidebar-link${filter === "active" ? " active" : ""}`} onClick={() => { setFilter("active"); setCatFilter("All"); }}>
+              <Flame size={16} /> Active <span>{activeCount}</span>
+            </button>
+            <button className={`sidebar-link${filter === "completed" ? " active" : ""}`} onClick={() => { setFilter("completed"); setCatFilter("All"); }}>
+              <CheckCircle2 size={16} /> Completed <span>{completedCount}</span>
+            </button>
+          </div>
+
+          <div className="sidebar-panel">
+            <p className="sidebar-title">Categories</p>
+            {dashboardStats.categoryCounts.map(({ category, count }) => (
+              count > 0 && (
+                <button
+                  key={category}
+                  className={`sidebar-link${catFilter === category ? " active" : ""}`}
+                  onClick={() => { setCatFilter(category); setFilter("all"); }}
+                >
+                  <Folder size={16} /> {category} <span>{count}</span>
+                </button>
+              )
+            ))}
+          </div>
+        </aside>
+
+        <main className="card main-card task-workspace">
+          <div className="workspace-heading">
+            <div>
+              <span className="eyebrow">Task workspace</span>
+              <h2>Plan, sort, and finish your work</h2>
+            </div>
+            {dashboardStats.recurring > 0 && (
+              <span className="recurring-summary">{dashboardStats.recurring} recurring</span>
+            )}
+          </div>
+
+          <TodoInput addTodo={addTodo} categories={PRESET_CATEGORIES} />
 
         {/* Progress bar */}
         {totalCount > 0 && (
@@ -513,7 +621,8 @@ export default function TodoApp({ user }) {
             </div>
           </div>
         )}
-      </main>
+        </main>
+      </div>
 
       <Footer count={activeCount} total={totalCount} completed={completedCount} />
     </div>
