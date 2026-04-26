@@ -5,23 +5,31 @@ import {
 } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import {
-  Search, SortDesc, Trash2, MousePointerClick, CheckCheck, X, BarChart2,
+  SortDesc, Trash2, MousePointerClick, CheckCheck, X,
   CalendarDays, AlertTriangle, Flame, CheckCircle2, ListTodo, Folder,
+  ChevronUp, ChevronDown,
 } from "lucide-react";
 import { auth, db } from "../firebase";
 import { useToast } from "../context/ToastContext";
 
-import Header    from "./Header";
-import TodoInput from "./TodoInput";
-import TodoList  from "./TodoList";
-import Footer    from "./Footer";
-import Confetti    from "./Confetti";
-import StatsPanel  from "./StatsPanel";
+import Sidebar    from "./Sidebar";
+import TopBar     from "./TopBar";
+import HeroBand   from "./HeroBand";
+import TodoInput  from "./TodoInput";
+import TodoList   from "./TodoList";
+import Confetti   from "./Confetti";
 
 const PRESET_CATEGORIES = ["General", "Work", "Personal", "Shopping", "School"];
 const todosCol = collection(db, "todos");
 
-// How many days ago a due date was, as readable text
+const CAT_COLORS = {
+  General:  { bg: "rgba(154, 160, 180, 0.15)", fg: "#5A5C6B" },
+  Work:     { bg: "rgba(139, 143, 232, 0.15)", fg: "#5A5FCF" },
+  Personal: { bg: "rgba(20, 184, 166, 0.15)",  fg: "#0F766E" },
+  Shopping: { bg: "rgba(217, 119, 6, 0.15)",   fg: "#B45309" },
+  School:   { bg: "rgba(244, 114, 182, 0.18)", fg: "#BE185D" },
+};
+
 function dueDeltaText(dateStr) {
   const due = new Date(dateStr + "T00:00:00");
   const today = new Date();
@@ -58,12 +66,14 @@ export default function TodoApp({ user }) {
     setDensity(d =>
       d === "compact" ? "comfortable" : d === "comfortable" ? "spacious" : "compact"
     );
+
   const [loading,       setLoading]       = useState(true);
   const [showConfetti,  setShowConfetti]  = useState(false);
   const [selectMode,    setSelectMode]    = useState(false);
   const [selectedIds,   setSelectedIds]   = useState(new Set());
-  const [showStats,     setShowStats]     = useState(false);
+  const [quickAddOpen,  setQuickAddOpen]  = useState(true);
   const prevActiveRef = useRef(null);
+  const quickAddRef   = useRef(null);
 
   const toggleSelect = (id) =>
     setSelectedIds(prev => {
@@ -95,6 +105,7 @@ export default function TodoApp({ user }) {
     addToast(`Deleted ${ids.length} task${ids.length !== 1 ? "s" : ""}.`, "error");
     exitSelectMode();
   };
+
   const [notifPerm, setNotifPerm] = useState(
     "Notification" in window ? Notification.permission : "unsupported"
   );
@@ -108,8 +119,8 @@ export default function TodoApp({ user }) {
   // Page title
   useEffect(() => {
     const active = todos.filter(t => !t.completed).length;
-    document.title = active > 0 ? `(${active}) To-Do` : "To-Do";
-    return () => { document.title = "To-Do"; };
+    document.title = active > 0 ? `(${active}) Tendril` : "Tendril";
+    return () => { document.title = "Tendril"; };
   }, [todos]);
 
   // Confetti — fires when the last active task is completed
@@ -166,7 +177,6 @@ export default function TodoApp({ user }) {
   useEffect(() => {
     if (!("Notification" in window)) return;
     if (Notification.permission === "default") {
-      // Small delay so the UI settles before the browser dialog appears
       const t = setTimeout(() => {
         Notification.requestPermission().then(perm => setNotifPerm(perm));
       }, 1500);
@@ -193,7 +203,7 @@ export default function TodoApp({ user }) {
         if (!todo.dueDate || todo.completed || alreadyNotified.has(todo.id)) return;
 
         const due = new Date(todo.dueDate + "T00:00:00");
-        if (due > todayMidnight) return; // not due yet
+        if (due > todayMidnight) return;
 
         const overdue = due < todayMidnight;
         const title   = overdue ? "⚠️ Overdue Task" : "📋 Task Due Today";
@@ -205,7 +215,7 @@ export default function TodoApp({ user }) {
           body,
           icon:  "/favicon.svg",
           badge: "/favicon.svg",
-          tag:   todo.id, // browser deduplicates by tag
+          tag:   todo.id,
         });
 
         notif.onclick = () => { window.focus(); notif.close(); };
@@ -217,7 +227,7 @@ export default function TodoApp({ user }) {
       }
     };
 
-    check(); // run immediately when todos load
+    check();
     const interval = setInterval(check, 60_000);
     return () => clearInterval(interval);
   }, [todos, uid]);
@@ -226,7 +236,6 @@ export default function TodoApp({ user }) {
   const totalCount     = todos.length;
   const completedCount = todos.filter(t => t.completed).length;
   const activeCount    = totalCount - completedCount;
-  const pct            = totalCount === 0 ? 0 : Math.round((completedCount / totalCount) * 100);
   const todayStr       = new Date().toISOString().split("T")[0];
 
   const dashboardStats = useMemo(() => {
@@ -247,11 +256,6 @@ export default function TodoApp({ user }) {
       categoryCounts,
     };
   }, [todos, todayStr]);
-
-  const usedCategories = useMemo(() => {
-    const cats = new Set(todos.map(t => t.category || "General"));
-    return ["All", ...PRESET_CATEGORIES.filter(c => cats.has(c))];
-  }, [todos]);
 
   // ── Recurrence helpers ──────────────────────────────────
   const getNextDueDate = (dueDate, recurrence) => {
@@ -283,7 +287,6 @@ export default function TodoApp({ user }) {
     if (!t) return;
     const nowDone = !t.completed;
 
-    // Recurring: advance due date instead of completing
     if (nowDone && t.recurrence) {
       const nextDate = getNextDueDate(t.dueDate, t.recurrence);
       await updateDoc(doc(db, "todos", id), { dueDate: nextDate, completed: false });
@@ -361,270 +364,269 @@ export default function TodoApp({ user }) {
 
   const isFiltered = filter !== "all" || catFilter !== "All" || search.trim() !== "";
 
+  const onQuickAdd = () => {
+    setQuickAddOpen(prev => {
+      const next = !prev;
+      if (next) {
+        // scroll to input after toggle
+        setTimeout(() => {
+          quickAddRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+          quickAddRef.current?.querySelector("input[type='text']")?.focus();
+        }, 50);
+      }
+      return next;
+    });
+  };
+
+  const usedCategoriesActive = dashboardStats.categoryCounts.filter(c => c.count > 0);
+
   return (
-    <div className={`app density-${density}`}>
+    <div className={`tendril-app density-${density}`}>
       <Confetti active={showConfetti} />
-      <Header
-        user={user}
-        onSignOut={() => signOut(auth)}
-        dark={dark}
-        setDark={setDark}
-        notifPerm={notifPerm}
-        onRequestNotif={requestNotifPermission}
-        density={density}
-        onCycleDensity={cycleDensity}
-      />
 
-      <section className="dashboard-hero">
-        <div>
-          <span className="eyebrow">Today’s focus</span>
-          <h2>Build a calmer plan for the day.</h2>
-          <p>
-            {activeCount > 0
-              ? `${activeCount} active task${activeCount !== 1 ? "s" : ""} waiting. Start with what matters most.`
-              : totalCount > 0
-                ? "Everything is complete. You are clear for now."
-                : "Add your first task and turn this into your command center."}
-          </p>
-        </div>
-        <div className="hero-progress-card">
-          <span>{pct}% complete</span>
-          <strong>{completedCount}/{totalCount || 0}</strong>
-          <div className="hero-progress-track">
-            <div style={{ width: `${pct}%` }} />
-          </div>
-        </div>
-      </section>
+      <div className="tendril-shell">
+        <Sidebar
+          user={user}
+          onSignOut={() => signOut(auth)}
+          filter={filter}
+          setFilter={setFilter}
+          catFilter={catFilter}
+          setCatFilter={setCatFilter}
+          totalCount={totalCount}
+          activeCount={activeCount}
+          completedCount={completedCount}
+          dueTodayCount={dashboardStats.dueToday}
+          categoryCounts={dashboardStats.categoryCounts}
+          onQuickAdd={onQuickAdd}
+          quickAddOpen={quickAddOpen}
+          dark={dark}
+          setDark={setDark}
+          density={density}
+          onCycleDensity={cycleDensity}
+          notifPerm={notifPerm}
+          onRequestNotif={requestNotifPermission}
+        />
 
-      <section className="quick-stats">
-        <div className="quick-stat-card">
-          <CalendarDays size={18} />
-          <span>Due today</span>
-          <strong>{dashboardStats.dueToday}</strong>
-        </div>
-        <div className="quick-stat-card danger">
-          <AlertTriangle size={18} />
-          <span>Overdue</span>
-          <strong>{dashboardStats.overdue}</strong>
-        </div>
-        <div className="quick-stat-card warning">
-          <Flame size={18} />
-          <span>High priority</span>
-          <strong>{dashboardStats.highPriority}</strong>
-        </div>
-        <div className="quick-stat-card">
-          <CheckCircle2 size={18} />
-          <span>Completed</span>
-          <strong>{completedCount}</strong>
-        </div>
-      </section>
-
-      <div className="workspace-shell">
-        <aside className="workspace-sidebar">
-          <div className="sidebar-panel">
-            <p className="sidebar-title">Views</p>
-            <button className={`sidebar-link${filter === "all" && catFilter === "All" ? " active" : ""}`} onClick={() => { setFilter("all"); setCatFilter("All"); }}>
-              <ListTodo size={16} /> All tasks <span>{totalCount}</span>
-            </button>
-            <button className={`sidebar-link${filter === "active" ? " active" : ""}`} onClick={() => { setFilter("active"); setCatFilter("All"); }}>
-              <Flame size={16} /> Active <span>{activeCount}</span>
-            </button>
-            <button className={`sidebar-link${filter === "completed" ? " active" : ""}`} onClick={() => { setFilter("completed"); setCatFilter("All"); }}>
-              <CheckCircle2 size={16} /> Completed <span>{completedCount}</span>
-            </button>
-          </div>
-
-          <div className="sidebar-panel">
-            <p className="sidebar-title">Categories</p>
-            {dashboardStats.categoryCounts.map(({ category, count }) => (
-              count > 0 && (
-                <button
-                  key={category}
-                  className={`sidebar-link${catFilter === category ? " active" : ""}`}
-                  onClick={() => { setCatFilter(category); setFilter("all"); }}
-                >
-                  <Folder size={16} /> {category} <span>{count}</span>
-                </button>
-              )
-            ))}
-          </div>
-        </aside>
-
-        <main className="card main-card task-workspace">
-          <div className="workspace-heading">
-            <div>
-              <span className="eyebrow">Task workspace</span>
-              <h2>Plan, sort, and finish your work</h2>
-            </div>
-            {dashboardStats.recurring > 0 && (
-              <span className="recurring-summary">{dashboardStats.recurring} recurring</span>
-            )}
-          </div>
-
-          <TodoInput addTodo={addTodo} categories={PRESET_CATEGORIES} />
-
-        {/* Progress bar */}
-        {totalCount > 0 && (
-          <div className="progress-section">
-            <div className="progress-header">
-              <span className="progress-label">{completedCount} of {totalCount} tasks done</span>
-              <span className="progress-pct">{pct}%</span>
-            </div>
-            <div className="progress-track">
-              <div
-                className="progress-fill"
-                style={{ width: `${pct}%` }}
-                role="progressbar"
-                aria-valuenow={pct}
-                aria-valuemin={0}
-                aria-valuemax={100}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Search + Sort + Stats toggle */}
-        <div className="controls-row">
-          <div className="search-wrap">
-            <Search size={15} className="search-icon" />
-            <input
-              className="search"
-              placeholder="Search tasks or categories…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-          <div className="sort-wrap">
-            <SortDesc size={15} className="sort-icon" />
-            <select value={sort} onChange={(e) => setSort(e.target.value)}>
-              <option value="newest">Newest</option>
-              <option value="oldest">Oldest</option>
-              <option value="az">A → Z</option>
-              <option value="priority">Priority</option>
-              <option value="completed">Completed first</option>
-              <option value="manual">Manual order</option>
-            </select>
-          </div>
-          <button
-            className={`btn icon stats-toggle-btn${showStats ? " active" : ""}`}
-            onClick={() => setShowStats(s => !s)}
-            title={showStats ? "Hide stats" : "Show stats"}
-            aria-label="Toggle stats"
-          >
-            <BarChart2 size={17} />
-          </button>
-        </div>
-
-        {/* Stats panel */}
-        {showStats && <StatsPanel todos={todos} />}
-
-        {/* Status filter */}
-        <div className="filter-row">
-          {selectMode ? (
-            /* ── Select-mode header ── */
-            <div className="select-mode-bar">
-              <label className="select-all-wrap">
-                <input
-                  type="checkbox"
-                  checked={processedTodos.length > 0 && processedTodos.every(t => selectedIds.has(t.id))}
-                  onChange={() => toggleSelectAll(processedTodos)}
-                  aria-label="Select all"
-                />
-                <span className="select-all-label">
-                  {selectedIds.size > 0 ? `${selectedIds.size} selected` : "Select all"}
-                </span>
-              </label>
-              <button className="btn small secondary" onClick={exitSelectMode}>
-                <X size={13} /> Cancel
-              </button>
-            </div>
-          ) : (
-            /* ── Normal filter header ── */
-            <>
-              <div className="filters">
-                {["all", "active", "completed"].map(f => (
-                  <button
-                    key={f}
-                    className={`btn filter${filter === f ? " active" : ""}`}
-                    onClick={() => setFilter(f)}
-                  >
-                    {f === "all"    ? `All ${totalCount > 0 ? `(${totalCount})` : ""}` :
-                     f === "active" ? `Active (${activeCount})` :
-                                      `Done (${completedCount})`}
-                  </button>
-                ))}
-              </div>
-              <div className="filter-actions">
-                {totalCount > 0 && (
-                  <button className="btn small secondary" onClick={() => setSelectMode(true)}>
-                    <MousePointerClick size={13} /> Select
-                  </button>
-                )}
-                {completedCount > 0 && (
-                  <button className="btn small danger" onClick={clearCompleted}>
-                    <Trash2 size={13} /> Clear done
-                  </button>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* Category filter pills */}
-        {usedCategories.length > 2 && (
-          <div className="cat-filter-row">
-            {usedCategories.map(c => (
-              <button
-                key={c}
-                className={`btn cat-pill${catFilter === c ? " active" : ""}`}
-                onClick={() => setCatFilter(c)}
-              >
-                {c}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Task list */}
-        {loading ? (
-          <div className="loading-center">
-            <div className="spinner" />
-            <p className="muted">Syncing tasks…</p>
-          </div>
-        ) : (
-          <TodoList
-            todos={processedTodos}
-            toggleTodo={toggleTodo}
-            deleteTodo={deleteTodo}
-            editTodo={editTodo}
-            toggleSubtask={toggleSubtask}
-            onReorder={reorderTodos}
-            sortMode={sort}
-            isFiltered={isFiltered}
-            selectMode={selectMode}
-            selectedIds={selectedIds}
-            onToggleSelect={toggleSelect}
+        <div className="tendril-main">
+          <TopBar
+            search={search}
+            setSearch={setSearch}
+            user={user}
+            notifPerm={notifPerm}
+            onRequestNotif={requestNotifPermission}
+            hasUnread={dashboardStats.overdue > 0 || dashboardStats.dueToday > 0}
           />
-        )}
 
-        {/* Bulk action bar */}
-        {selectMode && selectedIds.size > 0 && (
-          <div className="bulk-bar">
-            <span className="bulk-count">{selectedIds.size} task{selectedIds.size !== 1 ? "s" : ""} selected</span>
-            <div className="bulk-actions">
-              <button className="btn small primary" onClick={bulkComplete}>
-                <CheckCheck size={14} /> Complete
-              </button>
-              <button className="btn small danger" onClick={bulkDelete}>
-                <Trash2 size={14} /> Delete
-              </button>
+          <HeroBand
+            activeCount={activeCount}
+            totalCount={totalCount}
+            dueToday={dashboardStats.dueToday}
+            todos={todos}
+          />
+
+          <div className="tendril-content">
+            {/* Quick stat cards */}
+            <div className="tendril-stats">
+              <div className="tendril-stat">
+                <div className="tendril-stat-icon"><CalendarDays size={18} /></div>
+                <span className="tendril-stat-label">Due today</span>
+                <strong className="tendril-stat-value">{dashboardStats.dueToday}</strong>
+              </div>
+              <div className="tendril-stat danger">
+                <div className="tendril-stat-icon"><AlertTriangle size={18} /></div>
+                <span className="tendril-stat-label">Overdue</span>
+                <strong className="tendril-stat-value">{dashboardStats.overdue}</strong>
+              </div>
+              <div className="tendril-stat warning">
+                <div className="tendril-stat-icon"><Flame size={18} /></div>
+                <span className="tendril-stat-label">High priority</span>
+                <strong className="tendril-stat-value">{dashboardStats.highPriority}</strong>
+              </div>
+              <div className="tendril-stat success">
+                <div className="tendril-stat-icon"><CheckCircle2 size={18} /></div>
+                <span className="tendril-stat-label">Completed</span>
+                <strong className="tendril-stat-value">{completedCount}</strong>
+              </div>
+            </div>
+
+            {/* Tasks workspace + Categories rail */}
+            <div className="tendril-cards-grid">
+              <div className="tendril-card">
+                <div className="tendril-card-header">
+                  <div className="tendril-card-title">
+                    <ListTodo size={18} />
+                    Tasks
+                    {totalCount > 0 && (
+                      <span className="tendril-card-pill">
+                        {filter === "completed" ? completedCount : activeCount} {filter === "completed" ? "done" : "open"}
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    className="tendril-icon-btn"
+                    onClick={onQuickAdd}
+                    title={quickAddOpen ? "Hide quick add" : "Show quick add"}
+                    aria-label="Toggle quick add"
+                  >
+                    {quickAddOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+                  </button>
+                </div>
+
+                {quickAddOpen && (
+                  <div ref={quickAddRef}>
+                    <TodoInput addTodo={addTodo} categories={PRESET_CATEGORIES} />
+                  </div>
+                )}
+
+                {/* Filter row */}
+                <div className="filter-row" style={{ marginBottom: 0, marginTop: 4 }}>
+                  {selectMode ? (
+                    <div className="select-mode-bar">
+                      <label className="select-all-wrap">
+                        <input
+                          type="checkbox"
+                          checked={processedTodos.length > 0 && processedTodos.every(t => selectedIds.has(t.id))}
+                          onChange={() => toggleSelectAll(processedTodos)}
+                          aria-label="Select all"
+                        />
+                        <span className="select-all-label">
+                          {selectedIds.size > 0 ? `${selectedIds.size} selected` : "Select all"}
+                        </span>
+                      </label>
+                      <button className="btn small secondary" onClick={exitSelectMode}>
+                        <X size={13} /> Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="filters">
+                        {["all", "active", "completed"].map(f => (
+                          <button
+                            key={f}
+                            className={`btn filter${filter === f ? " active" : ""}`}
+                            onClick={() => setFilter(f)}
+                          >
+                            {f === "all"    ? `All ${totalCount > 0 ? `(${totalCount})` : ""}` :
+                             f === "active" ? `Active (${activeCount})` :
+                                              `Done (${completedCount})`}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="filter-actions">
+                        <div className="sort-wrap">
+                          <SortDesc size={15} className="sort-icon" />
+                          <select value={sort} onChange={(e) => setSort(e.target.value)}>
+                            <option value="newest">Newest</option>
+                            <option value="oldest">Oldest</option>
+                            <option value="az">A → Z</option>
+                            <option value="priority">Priority</option>
+                            <option value="completed">Completed first</option>
+                            <option value="manual">Manual order</option>
+                          </select>
+                        </div>
+                        {totalCount > 0 && (
+                          <button className="btn small secondary" onClick={() => setSelectMode(true)}>
+                            <MousePointerClick size={13} /> Select
+                          </button>
+                        )}
+                        {completedCount > 0 && (
+                          <button className="btn small danger" onClick={clearCompleted}>
+                            <Trash2 size={13} /> Clear done
+                          </button>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Task list */}
+                {loading ? (
+                  <div className="loading-center">
+                    <div className="spinner" />
+                    <p className="muted">Syncing tasks…</p>
+                  </div>
+                ) : (
+                  <TodoList
+                    todos={processedTodos}
+                    toggleTodo={toggleTodo}
+                    deleteTodo={deleteTodo}
+                    editTodo={editTodo}
+                    toggleSubtask={toggleSubtask}
+                    onReorder={reorderTodos}
+                    sortMode={sort}
+                    isFiltered={isFiltered}
+                    selectMode={selectMode}
+                    selectedIds={selectedIds}
+                    onToggleSelect={toggleSelect}
+                  />
+                )}
+
+                {/* Bulk action bar */}
+                {selectMode && selectedIds.size > 0 && (
+                  <div className="bulk-bar">
+                    <span className="bulk-count">{selectedIds.size} task{selectedIds.size !== 1 ? "s" : ""} selected</span>
+                    <div className="bulk-actions">
+                      <button className="btn small primary" onClick={bulkComplete}>
+                        <CheckCheck size={14} /> Complete
+                      </button>
+                      <button className="btn small danger" onClick={bulkDelete}>
+                        <Trash2 size={14} /> Delete
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Right rail: Categories breakdown */}
+              <div className="tendril-card">
+                <div className="tendril-card-header">
+                  <div className="tendril-card-title">
+                    <Folder size={18} />
+                    Categories
+                  </div>
+                </div>
+
+                {usedCategoriesActive.length === 0 ? (
+                  <p className="tendril-cat-empty">Add tasks with categories to see your breakdown here.</p>
+                ) : (
+                  <div className="tendril-cat-list">
+                    {usedCategoriesActive.map(({ category, count }) => {
+                      const pct = totalCount === 0 ? 0 : Math.round((count / totalCount) * 100);
+                      const palette = CAT_COLORS[category] || CAT_COLORS.General;
+                      return (
+                        <button
+                          key={category}
+                          onClick={() => { setCatFilter(category); setFilter("all"); }}
+                          className="tendril-cat-row"
+                          style={{ background: "transparent", border: 0, cursor: "pointer", padding: 0, textAlign: "left" }}
+                          title={`Filter by ${category}`}
+                        >
+                          <span
+                            className="tendril-cat-icon"
+                            style={{ background: palette.bg, color: palette.fg }}
+                          >
+                            <Folder size={16} />
+                          </span>
+                          <div className="tendril-cat-info">
+                            <div className="tendril-cat-name">{category}</div>
+                            <div className="tendril-cat-bar">
+                              <div
+                                className="tendril-cat-bar-fill"
+                                style={{ width: `${pct}%`, background: palette.fg }}
+                              />
+                            </div>
+                          </div>
+                          <span className="tendril-cat-count">{count}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        )}
-        </main>
+        </div>
       </div>
-
-      <Footer count={activeCount} total={totalCount} completed={completedCount} />
     </div>
   );
 }

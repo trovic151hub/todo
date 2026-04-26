@@ -5,7 +5,7 @@ import {
   signInWithPopup,
 } from "firebase/auth";
 import { auth, provider } from "../firebase";
-import { Eye, EyeOff, Mail, Lock, LogIn, UserPlus, CheckSquare } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, LogIn, UserPlus, Leaf } from "lucide-react";
 import { useToast } from "../context/ToastContext";
 
 const parseError = (code) => {
@@ -72,11 +72,11 @@ export default function Auth() {
     <div className="auth-container">
       <div className="auth-card">
         <div className="auth-logo">
-          <CheckSquare size={32} strokeWidth={2} />
+          <Leaf size={28} strokeWidth={2.2} />
         </div>
-        <h2>{isLoginMode ? "Welcome back" : "Create account"}</h2>
+        <h2>{isLoginMode ? "Welcome to Tendril" : "Join Tendril"}</h2>
         <p className="auth-subtitle">
-          {isLoginMode ? "Sign in to your tasks" : "Get organised today"}
+          {isLoginMode ? "Sign in to plan a calmer day" : "Build a calmer plan for your day"}
         </p>
 
         <form onSubmit={handleSubmit} className="auth-form">
