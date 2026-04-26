@@ -7,8 +7,10 @@ function formatDate(d) {
 export default function TopBar({
   search, setSearch,
   user,
-  notifPerm, onRequestNotif,
+  notifPerm,
   hasUnread = false,
+  onToggleNotifPanel,
+  notifPanelOpen = false,
 }) {
   const dateLabel = formatDate(new Date());
   const BellIcon = notifPerm === "granted" ? Bell : BellOff;
@@ -28,15 +30,18 @@ export default function TopBar({
 
       <div className="tendril-topbar-right">
         <span className="tendril-topbar-date">{dateLabel}</span>
-        <button
-          className={`tendril-icon-btn${notifPerm === "granted" ? " notif-on" : ""}`}
-          onClick={onRequestNotif}
-          title="Notifications"
-          aria-label="Notifications"
-        >
-          <BellIcon size={18} />
-          {hasUnread && <span className="notif-dot" />}
-        </button>
+        <div className="tendril-bell-wrap">
+          <button
+            className={`tendril-icon-btn${notifPerm === "granted" ? " notif-on" : ""}${notifPanelOpen ? " active" : ""}`}
+            onClick={onToggleNotifPanel}
+            title="Notifications"
+            aria-label="Notifications"
+            aria-expanded={notifPanelOpen}
+          >
+            <BellIcon size={18} />
+            {hasUnread && <span className="notif-dot" />}
+          </button>
+        </div>
         <div className="tendril-user-avatar" style={{ width: 36, height: 36 }} title={user.email}>
           {initials}
         </div>

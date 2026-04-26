@@ -2524,3 +2524,236 @@ html.dark .tendril-week-strip { background: rgba(255,255,255,0.06); }
   .tendril-topbar { padding: 14px 16px; }
   .tendril-topbar-date { display: none; }
 }
+
+/* ──────────────────────────────────────────────────────────
+   Focus seed (hero)
+   ────────────────────────────────────────────────────────── */
+.tendril-hero { align-items: flex-start; }
+.tendril-hero-left { display: flex; flex-direction: column; gap: 10px; min-width: 0; flex: 1; }
+
+.tendril-seed {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px dashed var(--border);
+  background: rgba(255, 255, 255, 0.55);
+  color: var(--text-muted);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  max-width: 100%;
+  transition: border-color .15s, background .15s, color .15s;
+}
+.tendril-seed:hover { border-color: var(--accent); color: var(--text); background: rgba(255,255,255,0.85); }
+.tendril-seed .seed-icon { color: var(--accent-deep); flex-shrink: 0; }
+
+.tendril-seed-set {
+  border-style: solid;
+  border-color: var(--accent-soft);
+  background: var(--accent-soft);
+  color: var(--accent-deep);
+  font-weight: 600;
+  max-width: 100%;
+}
+.tendril-seed-set .seed-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 480px;
+}
+.tendril-seed-set .seed-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: rgba(90, 95, 207, 0.15);
+  color: var(--accent-deep);
+  margin-left: 4px;
+  cursor: pointer;
+}
+.tendril-seed-set .seed-clear:hover { background: var(--accent-deep); color: #fff; }
+
+.tendril-seed-edit {
+  border-style: solid;
+  border-color: var(--accent);
+  background: #fff;
+  padding: 6px 12px;
+  width: min(520px, 100%);
+}
+.tendril-seed-edit input {
+  border: 0;
+  outline: 0;
+  background: transparent;
+  flex: 1;
+  font: inherit;
+  color: var(--text);
+  padding: 2px 0;
+}
+.tendril-seed-edit input::placeholder { color: var(--text-muted); }
+
+html.dark .tendril-seed { background: rgba(255,255,255,0.04); border-color: var(--border); }
+html.dark .tendril-seed:hover { background: rgba(255,255,255,0.08); }
+html.dark .tendril-seed-set { background: rgba(165, 168, 240, 0.12); border-color: rgba(165, 168, 240, 0.35); color: var(--accent); }
+html.dark .tendril-seed-edit { background: var(--surface); }
+
+/* ──────────────────────────────────────────────────────────
+   Notification panel (anchored under bell)
+   ────────────────────────────────────────────────────────── */
+.tendril-topbar-wrap { position: relative; }
+.tendril-bell-wrap { position: relative; display: inline-flex; }
+.tendril-icon-btn.active { background: var(--accent-soft); color: var(--accent-deep); }
+
+.tendril-notif-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 24px;
+  width: 360px;
+  max-width: calc(100vw - 32px);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 24px 64px -16px rgba(20, 22, 60, 0.25), 0 4px 12px rgba(20, 22, 60, 0.08);
+  z-index: 60;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: min(70vh, 560px);
+  animation: tendrilNotifIn .14s ease-out;
+}
+@keyframes tendrilNotifIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.tendril-notif-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.tendril-notif-title {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-weight: 700;
+  font-family: var(--font-display, inherit);
+  font-size: 14px;
+  color: var(--text);
+}
+.tendril-icon-btn.small { width: 28px; height: 28px; }
+
+.tendril-notif-body {
+  padding: 8px 6px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.tendril-notif-empty {
+  padding: 28px 16px;
+  text-align: center;
+  color: var(--text-muted);
+}
+.tendril-notif-empty p { margin: 8px 0 2px; font-weight: 600; color: var(--text); }
+.tendril-notif-empty span { font-size: 12px; }
+
+.tendril-notif-group { margin-bottom: 4px; }
+.tendril-notif-group-title {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 12px 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: var(--text-muted);
+}
+.tendril-notif-group-title.danger { color: #B91C1C; }
+html.dark .tendril-notif-group-title.danger { color: #FCA5A5; }
+
+.tendril-notif-list { list-style: none; padding: 0; margin: 0; }
+
+.tendril-notif-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border-radius: 10px;
+  margin: 2px 6px;
+}
+.tendril-notif-item:hover { background: var(--bg); }
+.tendril-notif-item .dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+.tendril-notif-item.danger .dot { background: #DC2626; }
+.tendril-notif-item .info { min-width: 0; flex: 1; }
+.tendril-notif-item .text {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tendril-notif-item .meta {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.tendril-notif-more {
+  padding: 6px 14px 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.tendril-notif-footer {
+  padding: 12px 14px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--bg);
+}
+.tendril-notif-perm {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 11px;
+}
+.tendril-notif-perm .perm-on {
+  display: inline-flex; align-items: center; gap: 4px;
+  color: var(--accent-deep);
+  background: var(--accent-soft);
+  padding: 3px 8px; border-radius: 999px; font-weight: 600;
+}
+.tendril-notif-perm .perm-off {
+  display: inline-flex; align-items: center; gap: 4px;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  padding: 3px 8px; border-radius: 999px;
+}
+.tendril-notif-perm .perm-snooze {
+  display: inline-flex; align-items: center; gap: 4px;
+  color: #92400E;
+  background: rgba(245, 158, 11, 0.15);
+  padding: 3px 8px; border-radius: 999px; font-weight: 600;
+}
+html.dark .tendril-notif-perm .perm-snooze { color: #FCD34D; background: rgba(245, 158, 11, 0.18); }
+
+.tendril-notif-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.tendril-notif-actions .btn { font-size: 12px; }
+
+@media (max-width: 720px) {
+  .tendril-notif-panel { right: 12px; left: 12px; width: auto; }
+  .tendril-seed-set .seed-text { max-width: 240px; }
+}

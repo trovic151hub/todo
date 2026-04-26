@@ -12,12 +12,13 @@ import {
 import { auth, db } from "../firebase";
 import { useToast } from "../context/ToastContext";
 
-import Sidebar    from "./Sidebar";
-import TopBar     from "./TopBar";
-import HeroBand   from "./HeroBand";
-import TodoInput  from "./TodoInput";
-import TodoList   from "./TodoList";
-import Confetti   from "./Confetti";
+import Sidebar           from "./Sidebar";
+import TopBar            from "./TopBar";
+import HeroBand          from "./HeroBand";
+import TodoInput         from "./TodoInput";
+import TodoList          from "./TodoList";
+import Confetti          from "./Confetti";
+import NotificationPanel from "./NotificationPanel";
 
 const PRESET_CATEGORIES = ["General", "Work", "Personal", "Shopping", "School"];
 const todosCol = collection(db, "todos");
@@ -109,6 +110,10 @@ export default function TodoApp({ user }) {
   const [notifPerm, setNotifPerm] = useState(
     "Notification" in window ? Notification.permission : "unsupported"
   );
+  const [notifPanelOpen, setNotifPanelOpen] = useState(false);
+  const [snoozedUntil, setSnoozedUntil] = useState(() =>
+    localStorage.getItem(`tendril-notif-snooze-${uid}`) || null
+  );
 
   // Theme
   useEffect(() => {
@@ -168,21 +173,46 @@ export default function TodoApp({ user }) {
     setNotifPerm(perm);
     if (perm === "granted") {
       addToast("Notifications enabled! You'll be alerted when tasks are due.", "success");
+      try {
+        new Notification("🌱 Tendril notifications enabled", {
+          body: "We'll let you know when tasks are due.",
+          icon: "/favicon.svg",
+          tag: "tendril-welcome",
+        });
+      } catch {}
     } else {
       addToast("Notification permission denied.", "error");
     }
   }, [addToast]);
 
-  // Ask for permission automatically on first login (once per session)
-  useEffect(() => {
-    if (!("Notification" in window)) return;
-    if (Notification.permission === "default") {
-      const t = setTimeout(() => {
-        Notification.requestPermission().then(perm => setNotifPerm(perm));
-      }, 1500);
-      return () => clearTimeout(t);
+  // Send a test notification (used from the in-app panel)
+  const sendTestNotification = useCallback(() => {
+    if (!("Notification" in window) || Notification.permission !== "granted") {
+      addToast("Enable browser notifications first.", "info");
+      return;
     }
-  }, []);
+    try {
+      const n = new Notification("🌱 Tendril test notification", {
+        body: "Notifications are working. You'll see one of these when a task is due.",
+        icon: "/favicon.svg",
+        tag: "tendril-test",
+      });
+      n.onclick = () => { window.focus(); n.close(); };
+      addToast("Test notification sent.", "success");
+    } catch (e) {
+      addToast("Couldn't send a test notification.", "error");
+    }
+  }, [addToast]);
+
+  // Snooze all notifications until end of today
+  const snoozeForToday = useCallback(() => {
+    const end = new Date();
+    end.setHours(23, 59, 59, 999);
+    const iso = end.toISOString();
+    localStorage.setItem(`tendril-notif-snooze-${uid}`, iso);
+    setSnoozedUntil(iso);
+    addToast("Notifications snoozed until tomorrow.", "info");
+  }, [uid, addToast]);
 
   // ── Due-task checker (runs every 60 s while app is open) ─────
   useEffect(() => {
@@ -190,47 +220,67 @@ export default function TodoApp({ user }) {
 
     const check = () => {
       if (Notification.permission !== "granted") return;
+      // Respect snooze
+      if (snoozedUntil && new Date(snoozedUntil) > new Date()) return;
 
       const todayStr = new Date().toISOString().split("T")[0];
       const key = `notified-${uid}-${todayStr}`;
       const alreadyNotified = new Set(JSON.parse(localStorage.getItem(key) || "[]"));
-      const newlyNotified = [];
 
       const todayMidnight = new Date();
       todayMidnight.setHours(0, 0, 0, 0);
 
-      todos.forEach(todo => {
-        if (!todo.dueDate || todo.completed || alreadyNotified.has(todo.id)) return;
-
+      // Collect tasks needing a notification (due today or overdue, not yet notified)
+      const pending = todos.filter(todo => {
+        if (!todo.dueDate || todo.completed) return false;
+        if (alreadyNotified.has(todo.id))    return false;
         const due = new Date(todo.dueDate + "T00:00:00");
-        if (due > todayMidnight) return;
-
-        const overdue = due < todayMidnight;
-        const title   = overdue ? "⚠️ Overdue Task" : "📋 Task Due Today";
-        const body    = overdue
-          ? `"${todo.text}" was due ${dueDeltaText(todo.dueDate)} — still pending!`
-          : `"${todo.text}" is due today!`;
-
-        const notif = new Notification(title, {
-          body,
-          icon:  "/favicon.svg",
-          badge: "/favicon.svg",
-          tag:   todo.id,
-        });
-
-        notif.onclick = () => { window.focus(); notif.close(); };
-        newlyNotified.push(todo.id);
+        return due <= todayMidnight;
       });
 
-      if (newlyNotified.length > 0) {
-        localStorage.setItem(key, JSON.stringify([...alreadyNotified, ...newlyNotified]));
+      if (pending.length === 0) return;
+
+      try {
+        if (pending.length === 1) {
+          const todo = pending[0];
+          const due  = new Date(todo.dueDate + "T00:00:00");
+          const overdue = due < todayMidnight;
+          const title = overdue ? "⚠️ Overdue task" : "🌱 Task due today";
+          const body  = overdue
+            ? `"${todo.text}" was due ${dueDeltaText(todo.dueDate)} — still pending.`
+            : `"${todo.text}" is due today.`;
+          const n = new Notification(title, {
+            body, icon: "/favicon.svg", badge: "/favicon.svg", tag: `tendril-${todo.id}`,
+          });
+          n.onclick = () => { window.focus(); n.close(); };
+        } else {
+          // Batched summary notification
+          const overdueCount  = pending.filter(t => new Date(t.dueDate + "T00:00:00") < todayMidnight).length;
+          const dueTodayCount = pending.length - overdueCount;
+          const parts = [];
+          if (overdueCount  > 0) parts.push(`${overdueCount} overdue`);
+          if (dueTodayCount > 0) parts.push(`${dueTodayCount} due today`);
+          const preview = pending.slice(0, 3).map(t => `• ${t.text}`).join("\n");
+          const more = pending.length > 3 ? `\n…and ${pending.length - 3} more` : "";
+          const n = new Notification(`🌱 Tendril · ${parts.join(" · ")}`, {
+            body: `${preview}${more}`,
+            icon: "/favicon.svg", badge: "/favicon.svg",
+            tag: `tendril-summary-${todayStr}`,
+          });
+          n.onclick = () => { window.focus(); n.close(); };
+        }
+
+        const updated = [...alreadyNotified, ...pending.map(p => p.id)];
+        localStorage.setItem(key, JSON.stringify(updated));
+      } catch (err) {
+        console.warn("Notification failed", err);
       }
     };
 
     check();
     const interval = setInterval(check, 60_000);
     return () => clearInterval(interval);
-  }, [todos, uid]);
+  }, [todos, uid, snoozedUntil]);
 
   // Stats
   const totalCount     = todos.length;
@@ -246,13 +296,18 @@ export default function TodoApp({ user }) {
       count: todos.filter(t => (t.category || "General") === category).length,
     }));
 
+    const dueTodayTasks = todos.filter(t => !t.completed && t.dueDate === todayStr);
+    const overdueTasks  = todos.filter(t =>
+      !t.completed && t.dueDate && new Date(t.dueDate + "T00:00:00") < today
+    );
+
     return {
-      dueToday: todos.filter(t => !t.completed && t.dueDate === todayStr).length,
-      overdue: todos.filter(t =>
-        !t.completed && t.dueDate && new Date(t.dueDate + "T00:00:00") < today
-      ).length,
+      dueToday:     dueTodayTasks.length,
+      overdue:      overdueTasks.length,
+      dueTodayTasks,
+      overdueTasks,
       highPriority: todos.filter(t => !t.completed && t.priority === "High").length,
-      recurring: todos.filter(t => !t.completed && t.recurrence).length,
+      recurring:    todos.filter(t => !t.completed && t.recurrence).length,
       categoryCounts,
     };
   }, [todos, todayStr]);
@@ -408,16 +463,31 @@ export default function TodoApp({ user }) {
         />
 
         <div className="tendril-main">
-          <TopBar
-            search={search}
-            setSearch={setSearch}
-            user={user}
-            notifPerm={notifPerm}
-            onRequestNotif={requestNotifPermission}
-            hasUnread={dashboardStats.overdue > 0 || dashboardStats.dueToday > 0}
-          />
+          <div className="tendril-topbar-wrap">
+            <TopBar
+              search={search}
+              setSearch={setSearch}
+              user={user}
+              notifPerm={notifPerm}
+              hasUnread={dashboardStats.overdue > 0 || dashboardStats.dueToday > 0}
+              onToggleNotifPanel={() => setNotifPanelOpen(o => !o)}
+              notifPanelOpen={notifPanelOpen}
+            />
+            <NotificationPanel
+              open={notifPanelOpen}
+              onClose={() => setNotifPanelOpen(false)}
+              overdueTasks={dashboardStats.overdueTasks}
+              dueTodayTasks={dashboardStats.dueTodayTasks}
+              notifPerm={notifPerm}
+              onEnable={() => { requestNotifPermission(); }}
+              onTest={sendTestNotification}
+              onSnooze={snoozeForToday}
+              snoozedUntil={snoozedUntil}
+            />
+          </div>
 
           <HeroBand
+            uid={uid}
             activeCount={activeCount}
             totalCount={totalCount}
             dueToday={dashboardStats.dueToday}
